@@ -19,26 +19,40 @@
 #   1. Install "Developer ID Application" certificate
 #   2. Store notarization credentials:
 #        xcrun notarytool store-credentials "VirtualMirror" \
-#          --apple-id <email> --team-id 26GLU32796 --password <app-specific-password>
+#          --apple-id <email> --team-id <team-id> --password <app-specific-password>
 #   3. Generate Sparkle EdDSA keys:
 #        ./scripts/sparkle-tools.sh generate_keys
 #   4. Install GitHub CLI: brew install gh && gh auth login
+#   5. Copy scripts/.env.example to scripts/.env and fill in your values
 #
 
 set -euo pipefail
 
-# --- Configuration ---
-TEAM_ID="26GLU32796"
+# --- Configuration (loaded from scripts/.env) ---
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/.env"
+if [[ ! -f "$ENV_FILE" ]]; then
+    echo "ERROR: $ENV_FILE not found."
+    echo "Copy scripts/.env.example to scripts/.env and fill in your values."
+    exit 1
+fi
+# shellcheck source=scripts/.env
+source "$ENV_FILE"
+
+# Validate required .env variables
+for var in TEAM_ID CODESIGN_IDENTITY NOTARYTOOL_PROFILE GITHUB_REPO; do
+    if [[ -z "${!var:-}" ]]; then
+        echo "ERROR: $var is not set in $ENV_FILE"
+        exit 1
+    fi
+done
+
 SCHEME="VirtualMirror"
 PROJECT="VirtualMirror.xcodeproj"
 APP_NAME="VirtualMirror"
-NOTARYTOOL_PROFILE="VirtualMirror"
 DMG_VOLUME_NAME="VirtualMirror"
-CODESIGN_IDENTITY="Developer ID Application: REDACTED (REDACTED)"
-GITHUB_REPO="souriscloud/VirtualMirror"
 
 # --- Derived paths ---
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_DIR/build/release"
 ARCHIVE_PATH="$BUILD_DIR/$APP_NAME.xcarchive"
@@ -159,7 +173,7 @@ success "Archive created"
 # ==========================================================================
 info "Step 3/8: Exporting with Developer ID signing"
 
-cat > "$BUILD_DIR/ExportOptions.plist" << 'EOF'
+cat > "$BUILD_DIR/ExportOptions.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -167,7 +181,7 @@ cat > "$BUILD_DIR/ExportOptions.plist" << 'EOF'
     <key>method</key>
     <string>developer-id</string>
     <key>teamID</key>
-    <string>26GLU32796</string>
+    <string>$TEAM_ID</string>
     <key>signingStyle</key>
     <string>automatic</string>
 </dict>

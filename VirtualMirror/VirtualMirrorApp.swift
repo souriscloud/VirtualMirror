@@ -191,10 +191,10 @@ class AboutWindowController {
 
         let aboutView = AboutView()
         let hostingView = NSHostingView(rootView: aboutView)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 320, height: 360)
+        hostingView.frame = NSRect(x: 0, y: 0, width: 320, height: 400)
 
         let w = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 360),
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 400),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false

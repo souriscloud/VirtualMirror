@@ -8,6 +8,7 @@ releases/
 # Sensitive files
 sparkle_private_key*
 *.p12
+scripts/.env
 
 # macOS
 .DS_Store
