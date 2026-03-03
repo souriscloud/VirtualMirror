@@ -1,0 +1,14 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>VirtualMirror</title>
+        <item>
+            <title>0.1.0</title>
+            <pubDate>Tue, 03 Mar 2026 17:16:06 +0100</pubDate>
+            <sparkle:version>100</sparkle:version>
+            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.1.0/VirtualMirror-0.1.0.dmg" length="2198381" type="application/octet-stream" sparkle:edSignature="pz2JYsAhM3DlEEx7uQQNPLVQE5k56pA9nL6bdOWYyo5s2KZOYUHqHLxY0NyGISY3kAwR3R5hlC1EQbDU3E2UCQ=="/>
+        </item>
+    </channel>
+</rss>
