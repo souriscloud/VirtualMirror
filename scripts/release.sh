@@ -149,10 +149,7 @@ xcodebuild archive \
     -scheme "$SCHEME" \
     -configuration Release \
     -archivePath "$ARCHIVE_PATH" \
-    -quiet \
-    DEVELOPMENT_TEAM="$TEAM_ID" \
-    CODE_SIGN_IDENTITY="$CODESIGN_IDENTITY" \
-    ENABLE_HARDENED_RUNTIME=YES
+    -quiet
 
 [[ -d "$ARCHIVE_PATH" ]] || error "Archive failed — $ARCHIVE_PATH not found"
 success "Archive created"
