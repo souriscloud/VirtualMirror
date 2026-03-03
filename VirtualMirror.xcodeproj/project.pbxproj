@@ -35,6 +35,7 @@
 		A1000027 /* AudioStreamReceiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000034; };
 		A1000028 /* AudioDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000035; };
 		A1000029 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000036; };
+		SP000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SP000002; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -80,6 +81,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				SP000003 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -207,6 +209,9 @@
 			dependencies = (
 			);
 			name = VirtualMirror;
+			packageProductDependencies = (
+				SP000002 /* Sparkle */,
+			);
 			productName = VirtualMirror;
 			productReference = B1000023 /* VirtualMirror.app */;
 			productType = "com.apple.product-type.application";
@@ -230,6 +235,9 @@
 				Base,
 			);
 			mainGroup = D1000001;
+			packageReferences = (
+				SP000001 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			productRefGroup = D1000010 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -404,6 +412,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 26GLU32796;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VirtualMirror/Info.plist;
 				INFOPLIST_KEY_NSMainStoryboardFile = "";
@@ -426,9 +435,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = VirtualMirror/VirtualMirror.entitlements;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 26GLU32796;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VirtualMirror/Info.plist;
 				INFOPLIST_KEY_NSMainStoryboardFile = "";
@@ -468,6 +480,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		SP000001 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		SP000002 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = SP000001 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E1000010 /* Project object */;
 }

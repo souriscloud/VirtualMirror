@@ -1,0 +1,18 @@
+# Build artifacts
+build/
+DerivedData/
+
+# Release artifacts (DMGs live locally, uploaded to GitHub Releases)
+releases/
+
+# Sensitive files
+sparkle_private_key*
+*.p12
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Xcode
+xcuserdata/
+*.xcuserstate

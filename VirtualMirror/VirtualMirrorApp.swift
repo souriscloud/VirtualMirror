@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import Sparkle
 
 @main
 struct VirtualMirrorApp: App {
@@ -25,6 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusMenuItem: NSMenuItem!
     private var showHideMenuItem: NSMenuItem!
     private var cancellable: AnyCancellable?
+    private let updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
 
     var airPlayManager: AirPlayManager? {
         didSet { observeState() }
@@ -74,6 +76,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(showHideMenuItem)
 
         menu.addItem(.separator())
+
+        let checkForUpdatesItem = NSMenuItem(title: "Check for Updates...", action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)), keyEquivalent: "")
+        checkForUpdatesItem.target = updaterController
+        menu.addItem(checkForUpdatesItem)
 
         let aboutItem = NSMenuItem(title: "About VirtualMirror...", action: #selector(showAbout), keyEquivalent: "")
         aboutItem.target = self
