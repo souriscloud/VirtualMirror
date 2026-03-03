@@ -21,7 +21,7 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>© 2026 Souris.CLOUD. All rights reserved.</string>
+	<string>© 2026 Souris.CLOUD. Licensed under GPL-3.0.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>VirtualMirror needs local network access to receive AirPlay screen mirroring from your iPhone.</string>
 	<key>NSBonjourServices</key>
@@ -30,10 +30,12 @@
 		<string>_raop._tcp</string>
 	</array>
 	<key>SUFeedURL</key>
-	<string>https://raw.githubusercontent.com/souriscloud/VirtualMirror/main/appcast.xml</string>
+	<string>https://raw.githubusercontent.com/souriscloud/VirtualMirror/master/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>4uTQZEdMy3jrq7GANt1oiPJuTk1q5pKHJLf6xMjiWz8=</string>
 	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
 	<true/>
 </dict>
 </plist>
