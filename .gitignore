@@ -9,6 +9,7 @@ releases/
 sparkle_private_key*
 *.p12
 scripts/.env
+scripts/stats.sh
 
 # macOS
 .DS_Store
