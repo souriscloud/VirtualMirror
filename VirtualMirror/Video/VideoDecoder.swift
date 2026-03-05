@@ -10,6 +10,12 @@ class VideoDecoder: ObservableObject {
     private var formatDescription: CMVideoFormatDescription?
     private var nalLengthSize: Int32 = 4
 
+    /// Stored SPS/PPS from the last successful configureWithAVCC call.
+    /// Used to skip session recreation when the codec parameters haven't changed
+    /// (e.g. suspend/resume without rotation), preserving reference frames.
+    private var lastSPS: Data?
+    private var lastPPS: Data?
+
     // Output: decoded sample buffers for display
     @Published var latestSampleBuffer: CMSampleBuffer?
 
@@ -22,6 +28,8 @@ class VideoDecoder: ObservableObject {
         }
         formatDescription = nil
         nalLengthSize = 4
+        lastSPS = nil
+        lastPPS = nil
         frameCount = 0
         decodeErrorCount = 0
         DispatchQueue.main.async { [weak self] in
@@ -87,10 +95,23 @@ class VideoDecoder: ObservableObject {
             return
         }
 
+        let sps = spsData[0]
+        let pps = ppsData[0]
+
+        // If the SPS/PPS haven't changed and we already have a working session,
+        // skip recreation. This preserves reference frames across suspend/resume
+        // (lock/unlock) — the iPhone sends identical codec data on resume and
+        // expects the decoder to keep its state so P-frames can still reference
+        // pre-suspend frames.
+        if sps == lastSPS && pps == lastPPS && decompressionSession != nil {
+            logger.info("SPS/PPS unchanged, keeping existing decompression session")
+            return
+        }
+
         logger.info("Parsed avcC: \(spsData.count) SPS, \(ppsData.count) PPS, NAL length size: \(self.nalLengthSize)")
 
         // Create format description from SPS/PPS
-        createFormatDescription(sps: spsData[0], pps: ppsData[0])
+        createFormatDescription(sps: sps, pps: pps)
     }
 
     private func createFormatDescription(sps: Data, pps: Data) {
@@ -126,6 +147,8 @@ class VideoDecoder: ObservableObject {
         }
 
         self.formatDescription = desc
+        self.lastSPS = sps
+        self.lastPPS = pps
         let dimensions = CMVideoFormatDescriptionGetDimensions(desc)
         logger.info("Video format: \(dimensions.width)x\(dimensions.height)")
 

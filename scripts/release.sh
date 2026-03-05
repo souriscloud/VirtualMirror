@@ -71,6 +71,7 @@ sparkle_tool() {
 
 cleanup() {
     rm -rf "$BUILD_DIR/dmg-staging" "$BUILD_DIR/ExportOptions.plist" "$BUILD_DIR/$APP_NAME-notarize.zip"
+    rm -f "${NOTES_FILE:-}"
 }
 trap cleanup EXIT
 
@@ -137,6 +138,22 @@ if git -C "$PROJECT_DIR" rev-parse "v$VERSION" &>/dev/null 2>&1; then
     error "Git tag v$VERSION already exists. Choose a different version."
 fi
 
+# Check CHANGELOG.md exists and has unreleased content
+CHANGELOG="$PROJECT_DIR/CHANGELOG.md"
+if [[ ! -f "$CHANGELOG" ]]; then
+    error "CHANGELOG.md not found. Create it with an [Unreleased] section."
+fi
+
+# Extract the [Unreleased] section content (between "## [Unreleased]" and the next "## [")
+RELEASE_NOTES=$(sed -n '/^## \[Unreleased\]/,/^## \[/{/^## \[/!p;}' "$CHANGELOG" | sed '/^$/d')
+if [[ -z "$RELEASE_NOTES" ]]; then
+    error "No unreleased changes found in CHANGELOG.md. Add entries under ## [Unreleased] before releasing."
+fi
+
+info "Release notes from CHANGELOG.md:"
+echo "$RELEASE_NOTES"
+echo ""
+
 success "All preflight checks passed"
 
 # ==========================================================================
@@ -149,6 +166,31 @@ sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = $VERSION/" "$PBXPROJ"
 sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/" "$PBXPROJ"
 
 success "Version updated in project.pbxproj"
+
+# Stamp CHANGELOG.md: rename [Unreleased] -> [version] - date, add new [Unreleased]
+RELEASE_DATE=$(date +%Y-%m-%d)
+sed -i '' "s/^## \[Unreleased\]/## [Unreleased]\n\n## [$VERSION] - $RELEASE_DATE/" "$CHANGELOG"
+
+# Update the [Unreleased] comparison link and add the new version link
+sed -i '' "s|\[Unreleased\]: \(.*\)/compare/v.*\.\.\.HEAD|[Unreleased]: \1/compare/v$VERSION...HEAD|" "$CHANGELOG"
+
+# Get the previous version tag from the old comparison link (already updated above, so read the new version link)
+# Add a comparison link for the new version pointing to the previous version
+PREV_VERSION=$(sed -n 's/^\['"$VERSION"'\]: .*compare\/v\(.*\)\.\.\.v'"$VERSION"'$/\1/p' "$CHANGELOG")
+if [[ -z "$PREV_VERSION" ]]; then
+    # First time or no previous link — add the new version link before the last link line
+    # Find the last ## [x.y.z] entry that isn't the current version to determine the previous
+    PREV_VERSION=$(sed -n 's/^## \[\([0-9]*\.[0-9]*\.[0-9]*\)\].*/\1/p' "$CHANGELOG" | grep -v "$VERSION" | head -1)
+    if [[ -n "$PREV_VERSION" ]]; then
+        sed -i '' "/^\[$PREV_VERSION\]: /i\\
+[$VERSION]: https://github.com/$GITHUB_REPO/compare/v$PREV_VERSION...v$VERSION" "$CHANGELOG"
+    else
+        # Very first versioned release — just link to the tag
+        echo "[$VERSION]: https://github.com/$GITHUB_REPO/releases/tag/v$VERSION" >> "$CHANGELOG"
+    fi
+fi
+
+success "CHANGELOG.md stamped for v$VERSION"
 
 # ==========================================================================
 # STEP 2: ARCHIVE
@@ -357,21 +399,24 @@ info "Step 8/8: Publishing release"
 
 cd "$PROJECT_DIR"
 
-# Commit version bump + appcast
-git add "$PBXPROJ" appcast.xml
+# Commit version bump + appcast + changelog
+git add "$PBXPROJ" appcast.xml "$CHANGELOG"
 git commit -m "Release v$VERSION"
 
 # Push to remote
 CURRENT_BRANCH=$(git branch --show-current)
 git push origin "$CURRENT_BRANCH"
 
-# Create GitHub release with DMG attached
+# Create GitHub release with DMG attached, using changelog as release notes
+NOTES_FILE=$(mktemp)
+echo "$RELEASE_NOTES" > "$NOTES_FILE"
 gh release create "v$VERSION" \
     "$RELEASES_DIR/$DMG_FILENAME" \
     --repo "$GITHUB_REPO" \
     --title "v$VERSION" \
-    --notes "VirtualMirror v$VERSION" \
+    --notes-file "$NOTES_FILE" \
     --latest
+rm -f "$NOTES_FILE"
 
 RELEASE_URL="https://github.com/$GITHUB_REPO/releases/tag/v$VERSION"
 

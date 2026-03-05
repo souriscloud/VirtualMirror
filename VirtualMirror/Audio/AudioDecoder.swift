@@ -18,7 +18,14 @@ class AudioDecoder {
 
     // Packet description for the current AAC frame.
     // AudioConverter needs this for VBR codecs like AAC-ELD to know the packet boundaries.
-    fileprivate var currentPacketDescription = AudioStreamPacketDescription()
+    // Heap-allocated so the C callback can return a stable pointer that remains valid
+    // after the callback scope exits (the old withUnsafeMutablePointer approach returned
+    // a dangling pointer, causing garbled audio from corrupted packet descriptions).
+    fileprivate let currentPacketDescriptionPtr: UnsafeMutablePointer<AudioStreamPacketDescription> = {
+        let ptr = UnsafeMutablePointer<AudioStreamPacketDescription>.allocate(capacity: 1)
+        ptr.initialize(to: AudioStreamPacketDescription())
+        return ptr
+    }()
 
     /// Configures the decoder for the given audio format.
     /// - Parameters:
@@ -150,6 +157,8 @@ class AudioDecoder {
 
     deinit {
         stop()
+        currentPacketDescriptionPtr.deinitialize(count: 1)
+        currentPacketDescriptionPtr.deallocate()
     }
 }
 
@@ -185,10 +194,10 @@ private func audioDecoderInputDataProc(
     // Provide packet description for VBR codecs (AAC-ELD, AAC-LC).
     // Without this, AudioConverter may not know the packet boundaries.
     if let descPtr = outDataPacketDescription {
-        decoder.currentPacketDescription.mStartOffset = 0
-        decoder.currentPacketDescription.mVariableFramesInPacket = 0
-        decoder.currentPacketDescription.mDataByteSize = UInt32(packet.length)
-        descPtr.pointee = withUnsafeMutablePointer(to: &decoder.currentPacketDescription) { $0 }
+        decoder.currentPacketDescriptionPtr.pointee.mStartOffset = 0
+        decoder.currentPacketDescriptionPtr.pointee.mVariableFramesInPacket = 0
+        decoder.currentPacketDescriptionPtr.pointee.mDataByteSize = UInt32(packet.length)
+        descPtr.pointee = decoder.currentPacketDescriptionPtr
     }
 
     return noErr

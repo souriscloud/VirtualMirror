@@ -75,3 +75,24 @@ Networking/
 - Users should disable "AirPlay Receiver" in System Settings for best results
 - FairPlay C code should not be modified unless the protocol changes
 - Logger subsystem is `"com.virtualmirror"` (historical, not the bundle ID)
+
+## Changelog & Releases
+
+`CHANGELOG.md` uses [Keep a Changelog](https://keepachangelog.com) format.
+
+**After making code changes**, add entries under `## [Unreleased]` using these categories:
+`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`
+
+**To release**, run:
+
+```bash
+./scripts/release.sh 1.0.0
+```
+
+The script automatically:
+1. Extracts the `[Unreleased]` section from `CHANGELOG.md` (fails if empty)
+2. Stamps it with the version number and date
+3. Adds a fresh empty `[Unreleased]` section
+4. Updates comparison links
+5. Commits `CHANGELOG.md` alongside the version bump and appcast
+6. Uses the extracted notes as the GitHub Release body

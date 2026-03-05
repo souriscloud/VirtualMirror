@@ -51,10 +51,9 @@ class VideoLayerView: NSView {
     }
 
     func enqueueSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
-        guard displayLayer.status != .failed else {
-            logger.warning("Display layer failed, flushing")
-            displayLayer.flush()
-            return
+        if displayLayer.status == .failed {
+            logger.warning("Display layer failed (error=\(String(describing: self.displayLayer.error))), recovering")
+            displayLayer.flushAndRemoveImage()
         }
 
         displayLayer.enqueue(sampleBuffer)
