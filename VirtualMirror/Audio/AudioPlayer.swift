@@ -69,12 +69,13 @@ class AudioPlayer {
 
         // Copy non-interleaved float32 data into the buffer's per-channel pointers
         pcmData.withUnsafeBytes { src in
-            guard let floatData = buffer.floatChannelData else { return }
-            let srcFloat = src.bindMemory(to: Float.self)
+            guard let floatData = buffer.floatChannelData,
+                  let srcBase = src.baseAddress else { return }
+            let srcFloat = srcBase.assumingMemoryBound(to: Float.self)
             let bytesPerChannel = framesPerChannel * MemoryLayout<Float>.size
             for ch in 0..<channels {
                 let chOffset = ch * framesPerChannel
-                memcpy(floatData[ch], srcFloat.baseAddress! + chOffset, bytesPerChannel)
+                memcpy(floatData[ch], srcFloat + chOffset, bytesPerChannel)
             }
         }
 

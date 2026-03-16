@@ -41,16 +41,20 @@ class AirPlayManager: ObservableObject {
     private var airPlayService: AirPlayService?
     private var airPlayServer: AirPlayServer?
 
+    /// Watchdog timer that fires if the state stays in `.connecting` too long.
+    private var connectingTimeoutTask: Task<Void, Never>?
+    /// How long to wait in `.connecting` before reverting to `.idle`.
+    private static let connectingTimeout: TimeInterval = 30
+
     func start() {
         logger.info("Starting AirPlay services")
         state = .idle
 
         airPlayServer = AirPlayServer(manager: self)
-        let port: UInt16 = 47000 // Avoid conflict with macOS built-in AirPlay Receiver on port 7000
-        airPlayServer?.start(port: port)
+        airPlayServer?.start(port: AirPlayConfig.airplayPort)
 
         airPlayService = AirPlayService()
-        airPlayService?.startAdvertising(port: Int(port))
+        airPlayService?.startAdvertising(port: Int(AirPlayConfig.airplayPort))
     }
 
     func restart() {
@@ -69,12 +73,22 @@ class AirPlayManager: ObservableObject {
 
     nonisolated func didStartConnecting(deviceName: String) {
         Task { @MainActor in
+            self.connectingTimeoutTask?.cancel()
             self.state = .connecting(deviceName)
+
+            // Start watchdog — revert to idle if RECORD never arrives
+            self.connectingTimeoutTask = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(AirPlayManager.connectingTimeout))
+                guard !Task.isCancelled, case .connecting = self.state else { return }
+                self.logger.warning("Connecting timeout — reverting to idle")
+                self.state = .idle
+            }
         }
     }
 
     nonisolated func didStartMirroring() {
         Task { @MainActor in
+            self.connectingTimeoutTask?.cancel()
             let name = self.state.deviceName ?? "Unknown"
             self.state = .mirroring(name)
         }
@@ -82,6 +96,7 @@ class AirPlayManager: ObservableObject {
 
     nonisolated func didDisconnect() {
         Task { @MainActor in
+            self.connectingTimeoutTask?.cancel()
             self.state = .idle
             self.videoDecoder.reset()
         }
@@ -89,6 +104,7 @@ class AirPlayManager: ObservableObject {
 
     nonisolated func didEncounterError(_ message: String) {
         Task { @MainActor in
+            self.connectingTimeoutTask?.cancel()
             self.state = .error(message)
         }
     }

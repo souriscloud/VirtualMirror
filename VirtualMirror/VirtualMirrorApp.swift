@@ -35,10 +35,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
 
-        // Hide dock icon — app lives in the menu bar
-        // (Commented out: keeping dock icon so window management works naturally)
-        // NSApp.setActivationPolicy(.accessory)
-
         // Intercept window close to hide instead of quit
         DispatchQueue.main.async {
             for window in NSApp.windows where window.contentView != nil {
@@ -52,6 +48,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             showWindow()
         }
         return true
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        airPlayManager?.stop()
     }
 
     // MARK: - Status Bar

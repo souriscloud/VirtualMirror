@@ -10,6 +10,14 @@ struct AirPlayConfig {
     static let firmwareVersion = "p20.20"
     static let osVersion = "14.0"
 
+    // MARK: - Port Allocation
+    // macOS built-in AirPlay Receiver runs on port 7000; we use 47000+ to avoid conflicts.
+    static let airplayPort: UInt16 = 47000
+    static let videoStreamPort: UInt16 = 47100
+    static let ntpTimingPort: UInt16 = 47102
+    static let audioStreamPort: UInt16 = 47103
+    static let audioControlPort: UInt16 = 47104
+
     // Feature flags matching UxPlay exactly for maximum compatibility.
     // UxPlay uses 0x5A7FFEE6,0x0 — this avoids triggering AirPlay 2 protocol
     // paths or MFi /auth-setup that we can't handle.
@@ -211,7 +219,12 @@ struct AirPlayConfig {
                 ] as [String : Any],
             ],
         ]
-        return try! PropertyListSerialization.data(fromPropertyList: info, format: .binary, options: 0)
+        do {
+            return try PropertyListSerialization.data(fromPropertyList: info, format: .binary, options: 0)
+        } catch {
+            // This should never fail with static dictionaries, but return empty data rather than crash
+            return Data()
+        }
     }
 
     // MARK: - /info qualifier response (txtAirPlay / txtRAOP)
@@ -226,7 +239,11 @@ struct AirPlayConfig {
         } else if qualifier == "txtRAOP" {
             response["txtRAOP"] = Data(raopTXTRecord())
         }
-        return try! PropertyListSerialization.data(fromPropertyList: response, format: .binary, options: 0)
+        do {
+            return try PropertyListSerialization.data(fromPropertyList: response, format: .binary, options: 0)
+        } catch {
+            return Data()
+        }
     }
 
     // MARK: - DNS-SD TXT Record Building

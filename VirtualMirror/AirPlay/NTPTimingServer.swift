@@ -11,6 +11,8 @@ class NTPTimingServer {
     private var listener: NWListener?
     private var activeConnection: NWConnection?
     private var activeSyncTimer: DispatchSourceTimer?
+    /// Serial queue protecting mutable state (sequenceNumber, connections, timer).
+    private let stateQueue = DispatchQueue(label: "cloud.souris.virtualmirror.ntptiming", qos: .userInteractive)
     private var sequenceNumber: UInt16 = 0
     let port: UInt16
 
@@ -42,7 +44,7 @@ class NTPTimingServer {
             self?.handleConnection(conn)
         }
 
-        listener?.start(queue: .global(qos: .userInteractive))
+        listener?.start(queue: stateQueue)
     }
 
     /// Start actively sending NTP timing requests to the iPhone's timing port.
@@ -75,16 +77,18 @@ class NTPTimingServer {
             }
         }
 
-        connection.start(queue: .global(qos: .userInteractive))
+        connection.start(queue: stateQueue)
     }
 
     func stop() {
-        activeSyncTimer?.cancel()
-        activeSyncTimer = nil
-        activeConnection?.cancel()
-        activeConnection = nil
-        listener?.cancel()
-        listener = nil
+        stateQueue.sync {
+            activeSyncTimer?.cancel()
+            activeSyncTimer = nil
+            activeConnection?.cancel()
+            activeConnection = nil
+            listener?.cancel()
+            listener = nil
+        }
     }
 
     // MARK: - Active NTP Sync (send requests to iPhone)
@@ -94,7 +98,7 @@ class NTPTimingServer {
         sendTimingRequest()
 
         // Then every 3 seconds
-        let timer = DispatchSource.makeTimerSource(queue: .global(qos: .userInteractive))
+        let timer = DispatchSource.makeTimerSource(queue: stateQueue)
         timer.schedule(deadline: .now() + 3, repeating: 3.0)
         timer.setEventHandler { [weak self] in
             self?.sendTimingRequest()
@@ -152,7 +156,7 @@ class NTPTimingServer {
                 self?.receiveTimingRequest(on: conn)
             }
         }
-        conn.start(queue: .global(qos: .userInteractive))
+        conn.start(queue: stateQueue)
     }
 
     private func receiveTimingRequest(on conn: NWConnection) {

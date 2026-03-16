@@ -35,7 +35,12 @@
 		A1000027 /* AudioStreamReceiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000034; };
 		A1000028 /* AudioDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000035; };
 		A1000029 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000036; };
+		A1000030 /* StreamKeyDerivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000037; };
 		SP000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SP000002; };
+		T1000001 /* HTTPParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000001; };
+		T1000002 /* AirPlayStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000002; };
+		T1000003 /* StreamKeyDerivationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000003; };
+		T1000004 /* HTTPResponseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000004; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -74,7 +79,31 @@
 		B1000034 /* AudioStreamReceiver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioStreamReceiver.swift; sourceTree = "<group>"; };
 		B1000035 /* AudioDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDecoder.swift; sourceTree = "<group>"; };
 		B1000036 /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
+		B1000037 /* StreamKeyDerivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamKeyDerivation.swift; sourceTree = "<group>"; };
+		T2000001 /* HTTPParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPParserTests.swift; sourceTree = "<group>"; };
+		T2000002 /* AirPlayStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPlayStateTests.swift; sourceTree = "<group>"; };
+		T2000003 /* StreamKeyDerivationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamKeyDerivationTests.swift; sourceTree = "<group>"; };
+		T2000004 /* HTTPResponseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPResponseTests.swift; sourceTree = "<group>"; };
+		T3000001 /* VirtualMirrorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VirtualMirrorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXContainerItemProxy section */
+		T4000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1000010 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1000001;
+			remoteInfo = VirtualMirror;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		T5000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1000001 /* VirtualMirror */;
+			targetProxy = T4000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		C1000001 /* Frameworks */ = {
@@ -85,6 +114,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		T6000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		T6000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				T1000001 /* HTTPParserTests.swift in Sources */,
+				T1000002 /* AirPlayStateTests.swift in Sources */,
+				T1000003 /* StreamKeyDerivationTests.swift in Sources */,
+				T1000004 /* HTTPResponseTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -92,6 +139,7 @@
 			isa = PBXGroup;
 			children = (
 				D1000002 /* VirtualMirror */,
+				D1000011 /* VirtualMirrorTests */,
 				D1000010 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -171,6 +219,7 @@
 			children = (
 				B1000017 /* HTTPParser.swift */,
 				B1000018 /* HTTPResponse.swift */,
+				B1000037 /* StreamKeyDerivation.swift */,
 			);
 			path = Networking;
 			sourceTree = "<group>";
@@ -189,8 +238,20 @@
 			isa = PBXGroup;
 			children = (
 				B1000023 /* VirtualMirror.app */,
+				T3000001 /* VirtualMirrorTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D1000011 /* VirtualMirrorTests */ = {
+			isa = PBXGroup;
+			children = (
+				T2000001 /* HTTPParserTests.swift */,
+				T2000002 /* AirPlayStateTests.swift */,
+				T2000003 /* StreamKeyDerivationTests.swift */,
+				T2000004 /* HTTPResponseTests.swift */,
+			);
+			path = VirtualMirrorTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -215,6 +276,23 @@
 			productName = VirtualMirror;
 			productReference = B1000023 /* VirtualMirror.app */;
 			productType = "com.apple.product-type.application";
+		};
+		T7000001 /* VirtualMirrorTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = T8000003 /* Build configuration list for PBXNativeTarget "VirtualMirrorTests" */;
+			buildPhases = (
+				T6000002 /* Sources */,
+				T6000001 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				T5000001 /* PBXTargetDependency */,
+			);
+			name = VirtualMirrorTests;
+			productName = VirtualMirrorTests;
+			productReference = T3000001 /* VirtualMirrorTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -243,6 +321,7 @@
 			projectRoot = "";
 			targets = (
 				E1000001 /* VirtualMirror */,
+				T7000001 /* VirtualMirrorTests */,
 			);
 		};
 /* End PBXProject section */
@@ -290,6 +369,7 @@
 				A1000027 /* AudioStreamReceiver.swift in Sources */,
 				A1000028 /* AudioDecoder.swift in Sources */,
 				A1000029 /* AudioPlayer.swift in Sources */,
+				A1000030 /* StreamKeyDerivation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -459,6 +539,40 @@
 			};
 			name = Release;
 		};
+		T8000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 26GLU32796;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.souris.virtualmirror.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VirtualMirror.app/Contents/MacOS/VirtualMirror";
+			};
+			name = Debug;
+		};
+		T8000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 26GLU32796;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.souris.virtualmirror.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VirtualMirror.app/Contents/MacOS/VirtualMirror";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -476,6 +590,15 @@
 			buildConfigurations = (
 				F1000012 /* Debug */,
 				F1000013 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		T8000003 /* Build configuration list for PBXNativeTarget "VirtualMirrorTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				T8000001 /* Debug */,
+				T8000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

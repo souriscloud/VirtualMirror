@@ -17,10 +17,10 @@ class AirPlayConnection {
 
     // Mirror stream
     private var mirrorStreamReceiver: MirrorStreamReceiver?
-    private var videoStreamPort: UInt16 = 47100
-    private var timingPort: UInt16 = 47102
-    private var audioStreamPort: UInt16 = 47103
-    private var audioControlPort: UInt16 = 47104
+    private let videoStreamPort = AirPlayConfig.videoStreamPort
+    private let timingPort = AirPlayConfig.ntpTimingPort
+    private let audioStreamPort = AirPlayConfig.audioStreamPort
+    private let audioControlPort = AirPlayConfig.audioControlPort
 
     // Audio stream
     private var audioStreamReceiver: AudioStreamReceiver?
@@ -128,6 +128,11 @@ class AirPlayConnection {
             case .parsed(let request, let consumed):
                 buffer = Data(buffer.dropFirst(consumed))
                 handleRequest(request)
+            case .error(let message):
+                logger.error("HTTP parse error: \(message)")
+                buffer.removeAll()
+                close()
+                return
             }
         }
     }
@@ -286,7 +291,11 @@ class AirPlayConnection {
             logger.warning("SETUP with neither ekey/eiv nor streams")
             sendResponse(HTTPResponse.ok(cseq: request.cseq, isRTSP: true))
         } else {
-            let responseData = try! PropertyListSerialization.data(fromPropertyList: responsePlist, format: .binary, options: 0)
+            guard let responseData = try? PropertyListSerialization.data(fromPropertyList: responsePlist, format: .binary, options: 0) else {
+                logger.error("SETUP: failed to serialize response plist")
+                sendResponse(HTTPResponse.build(status: 500, statusText: "Internal Server Error", cseq: request.cseq, isRTSP: true))
+                return
+            }
             sendResponse(HTTPResponse.okBplist(cseq: request.cseq, body: responseData, isRTSP: true))
         }
     }

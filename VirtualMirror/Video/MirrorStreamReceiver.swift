@@ -1,6 +1,5 @@
 import Foundation
 import Network
-import CryptoKit
 import os
 
 class MirrorStreamReceiver {
@@ -34,10 +33,10 @@ class MirrorStreamReceiver {
     }
 
     /// Configures encryption keys for the current stream.
-    /// Can be called again after a stream reset (rotation) with new keys.
+    /// Called during SETUP — no concurrent streaming at this point.
     func configureEncryption(fairplayKey: Data?, ecdhSecret: Data?, streamConnectionID: UInt64) {
         if let fpKey = fairplayKey, let ecdh = ecdhSecret {
-            let (derivedKey, derivedIV) = deriveMirrorKeys(fairplayKey: fpKey, ecdhSecret: ecdh, streamConnectionID: streamConnectionID)
+            let (derivedKey, derivedIV) = StreamKeyDerivation.deriveMirrorKeys(fairplayKey: fpKey, ecdhSecret: ecdh, streamConnectionID: streamConnectionID)
             currentDecryptKey = derivedKey
             currentDecryptIV = derivedIV
             resetDecryptor()
@@ -63,12 +62,12 @@ class MirrorStreamReceiver {
     /// Resets the stream for a new session (rotation/reconnect).
     /// Closes the current data connection and clears the buffer, but
     /// keeps the listener alive so the new connection can bind immediately.
+    /// Called during TEARDOWN/SETUP — no concurrent streaming at this point.
     func resetStream() {
         connectionGeneration &+= 1
         connection?.cancel()
         connection = nil
         buffer = Data()
-        packetCount = 0
         currentDecryptKey = nil
         currentDecryptIV = nil
         videoDecryptor = VideoDecryptor()
@@ -111,31 +110,6 @@ class MirrorStreamReceiver {
         }
 
         listener?.start(queue: .global(qos: .userInteractive))
-    }
-
-    /// Derive the actual AES-128-CTR key and IV for mirror stream decryption.
-    private func deriveMirrorKeys(fairplayKey: Data, ecdhSecret: Data, streamConnectionID: UInt64) -> (key: Data, iv: Data) {
-        // Step 1: eaeskey = SHA-512(fairplayKey[16] || ecdhSecret[32]), take first 16 bytes
-        var hasher1 = SHA512()
-        hasher1.update(data: fairplayKey)
-        hasher1.update(data: ecdhSecret)
-        let eaeskey = Data(hasher1.finalize().prefix(16))
-
-        // Step 2: decrypt_key = SHA-512("AirPlayStreamKey{connID}" || eaeskey[16]), take first 16 bytes
-        var hasher2 = SHA512()
-        let skeyString = "AirPlayStreamKey\(streamConnectionID)"
-        hasher2.update(data: Data(skeyString.utf8))
-        hasher2.update(data: eaeskey)
-        let decryptKey = Data(hasher2.finalize().prefix(16))
-
-        // Step 3: decrypt_iv = SHA-512("AirPlayStreamIV{connID}" || eaeskey[16]), take first 16 bytes
-        var hasher3 = SHA512()
-        let sivString = "AirPlayStreamIV\(streamConnectionID)"
-        hasher3.update(data: Data(sivString.utf8))
-        hasher3.update(data: eaeskey)
-        let decryptIV = Data(hasher3.finalize().prefix(16))
-
-        return (decryptKey, decryptIV)
     }
 
     func stop() {
@@ -215,17 +189,14 @@ class MirrorStreamReceiver {
         }
     }
 
-    private var packetCount = 0
-
     private func processBuffer() {
         while buffer.count >= MirrorStreamReceiver.headerSize {
             // Read the 128-byte packet header
             let payloadSize = buffer.withUnsafeBytes { ptr -> UInt32 in
                 ptr.load(as: UInt32.self).littleEndian
             }
-            // Type is a single byte at offset 4; byte 5 is flags (0x10 = keyframe/IDR)
+            // Type is a single byte at offset 4
             let payloadType: UInt8 = buffer[buffer.startIndex + 4]
-            let payloadFlags: UInt8 = buffer[buffer.startIndex + 5]
             // Byte 6: codec sub-flags for type 1 packets
             //   0x16/0x1e = normal h264/h265 SPS+PPS (stream active)
             //   0x56/0x5e = h264/h265 SPS+PPS (stream suspending, client sleeping)
@@ -256,9 +227,10 @@ class MirrorStreamReceiver {
             let payloadEnd = payloadStart + Int(payloadSize)
             let payload = Data(buffer[payloadStart..<payloadEnd])
 
-            // Consume this packet from the buffer
+            // Consume this packet from the buffer — creates a fresh, compact Data
+            // from the remaining bytes. This keeps the buffer aligned and prevents
+            // unbounded growth of the underlying storage.
             buffer = Data(buffer[payloadEnd...])
-            packetCount += 1
 
             // Process based on type
             switch payloadType {

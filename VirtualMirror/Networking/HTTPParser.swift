@@ -19,11 +19,24 @@ class HTTPParser {
     enum ParseResult {
         case needsMore
         case parsed(HTTPRequest, Int) // request + total bytes consumed
+        case error(String) // parsing error (malformed input)
     }
 
+    /// Maximum allowed header size (64 KB) to prevent memory exhaustion from oversized headers.
+    static let maxHeaderSize = 64 * 1024
+    /// Maximum allowed Content-Length (50 MB) to prevent memory exhaustion from oversized bodies.
+    static let maxContentLength = 50 * 1024 * 1024
+
     static func parse(data: Data) -> ParseResult {
+        // Reject headers that exceed the size limit before we even find the separator
+        if data.count > maxHeaderSize {
+            if findHeaderEnd(in: data, limit: maxHeaderSize) == nil {
+                return .error("Header exceeds maximum size (\(maxHeaderSize) bytes)")
+            }
+        }
+
         // Find the header/body separator \r\n\r\n
-        guard let headerEnd = findHeaderEnd(in: data) else {
+        guard let headerEnd = findHeaderEnd(in: data, limit: min(data.count, maxHeaderSize)) else {
             return .needsMore
         }
 
@@ -58,6 +71,10 @@ class HTTPParser {
         let bodyStart = headerEnd + 4 // skip \r\n\r\n
         let contentLength = Int(headers["Content-Length"] ?? headers["content-length"] ?? "0") ?? 0
 
+        if contentLength < 0 || contentLength > maxContentLength {
+            return .error("Content-Length \(contentLength) out of range (max \(maxContentLength))")
+        }
+
         if contentLength > 0 {
             let totalNeeded = bodyStart + contentLength
             guard data.count >= totalNeeded else {
@@ -70,16 +87,18 @@ class HTTPParser {
         }
     }
 
-    private static func findHeaderEnd(in data: Data) -> Int? {
-        let separator: [UInt8] = [0x0D, 0x0A, 0x0D, 0x0A] // \r\n\r\n
-        let bytes = Array(data)
-        guard bytes.count >= 4 else { return nil }
-        for i in 0...(bytes.count - 4) {
-            if bytes[i] == separator[0] && bytes[i+1] == separator[1] &&
-               bytes[i+2] == separator[2] && bytes[i+3] == separator[3] {
-                return i
+    private static func findHeaderEnd(in data: Data, limit: Int) -> Int? {
+        let searchEnd = min(data.count, limit)
+        guard searchEnd >= 4 else { return nil }
+        return data.withUnsafeBytes { ptr -> Int? in
+            let bytes = ptr.bindMemory(to: UInt8.self)
+            for i in 0...(searchEnd - 4) {
+                if bytes[i] == 0x0D && bytes[i+1] == 0x0A &&
+                   bytes[i+2] == 0x0D && bytes[i+3] == 0x0A {
+                    return i
+                }
             }
+            return nil
         }
-        return nil
     }
 }

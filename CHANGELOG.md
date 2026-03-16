@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Unit test target with 36 tests covering HTTPParser, HTTPResponse, AirPlayState, and StreamKeyDerivation
+- Shared `StreamKeyDerivation` utility for audio/video key derivation (eliminates code duplication between MirrorStreamReceiver and AudioStreamReceiver)
+- Centralized port constants in `AirPlayConfig` (airplayPort, videoStreamPort, ntpTimingPort, audioStreamPort, audioControlPort)
+- Connecting state watchdog timer — reverts to idle after 30 seconds if RECORD never arrives
+- Graceful shutdown — `AirPlayManager.stop()` is now called on app termination, cleanly releasing ports and audio engine
+
+### Changed
+
+- HTTPParser now returns `.error` for oversized headers (>64 KB) and excessive Content-Length (>50 MB), closing the connection on malformed input
+- HTTPParser `findHeaderEnd` uses `withUnsafeBytes` instead of copying to `Array`
+- AudioPlayer uses safe pointer access instead of force unwrapping `baseAddress`
+- VideoDecoder uses safe `guard let` for SPS/PPS base address instead of force unwrap
+- AirPlayConfig and AirPlayConnection plist serialization uses `try?` instead of `try!` to prevent crashes on serialization failure
+
+### Fixed
+
+- Data race in AudioStreamReceiver — data and control dispatch sources now share a single serial queue instead of using independent global concurrent queues
+- Data race in NTPTimingServer — mutable state now protected by a serial dispatch queue
+
+### Removed
+
+- Unused `packetCount` variable in MirrorStreamReceiver
+- Unused `payloadFlags` variable in MirrorStreamReceiver packet parsing
+- Commented-out `NSApp.setActivationPolicy(.accessory)` in AppDelegate
+
 ## [0.3.1] - 2026-03-05
 
 ### Fixed

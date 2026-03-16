@@ -1,7 +1,6 @@
 import Foundation
 import Darwin
 import CommonCrypto
-import CryptoKit
 import AudioToolbox
 import os
 
@@ -20,6 +19,10 @@ import os
 ///     before real audio data flows on the data port.
 class AudioStreamReceiver {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "AudioStream")
+
+    /// Serial queue for all audio stream state (packet processing, dedup, sync).
+    /// Both data and control dispatch sources dispatch onto this queue.
+    private let stateQueue = DispatchQueue(label: "cloud.souris.virtualmirror.audiostream", qos: .userInteractive)
 
     // Data socket (receives RTP audio packets)
     private var dataSocket: Int32 = -1
@@ -212,7 +215,7 @@ class AudioStreamReceiver {
 
         // Non-blocking mode — required for DispatchSource.makeReadSource
         let flags = fcntl(sock, F_GETFL)
-        fcntl(sock, F_SETFL, flags | O_NONBLOCK)
+        _ = fcntl(sock, F_SETFL, flags | O_NONBLOCK)
 
         // Allow address reuse
         var reuseAddr: Int32 = 1
@@ -254,7 +257,7 @@ class AudioStreamReceiver {
         guard dataSocket >= 0 else { return }
         let source = DispatchSource.makeReadSource(
             fileDescriptor: dataSocket,
-            queue: .global(qos: .userInteractive)
+            queue: stateQueue
         )
         source.setEventHandler { [weak self] in self?.readDataPackets() }
         source.setCancelHandler { [weak self] in self?.logger.debug("Audio data dispatch source cancelled") }
@@ -266,7 +269,7 @@ class AudioStreamReceiver {
         guard controlSocket >= 0 else { return }
         let source = DispatchSource.makeReadSource(
             fileDescriptor: controlSocket,
-            queue: .global(qos: .userInteractive)
+            queue: stateQueue
         )
         source.setEventHandler { [weak self] in self?.readControlPackets() }
         source.setCancelHandler { [weak self] in self?.logger.debug("Audio control dispatch source cancelled") }
@@ -578,15 +581,9 @@ class AudioStreamReceiver {
 
     // MARK: - Key Derivation
 
-    /// Derives the audio AES key using SHA-512:
-    ///   key = SHA-512(fairplayKey[16] || ecdhSecret[32])[0..15]
-    /// UxPlay's sha_init() uses EVP_sha512() despite misleading comments saying "sha-256".
-    /// The video key derivation also uses SHA-512 (with streamConnectionID), so both
-    /// audio and video use SHA-512 — audio just uses a simpler single-hash derivation.
+    /// Derives the audio AES key using SHA-512.
+    /// Delegates to the shared StreamKeyDerivation utility.
     private func deriveAudioKey(fairplayKey: Data, ecdhSecret: Data) -> Data {
-        var hasher = SHA512()
-        hasher.update(data: fairplayKey)
-        hasher.update(data: ecdhSecret)
-        return Data(hasher.finalize().prefix(16))
+        return StreamKeyDerivation.deriveAudioKey(fairplayKey: fairplayKey, ecdhSecret: ecdhSecret)
     }
 }

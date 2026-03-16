@@ -125,9 +125,13 @@ class VideoDecoder: ObservableObject {
         var formatDesc: CMVideoFormatDescription?
         let status = sps.withUnsafeBytes { spsPtr in
             pps.withUnsafeBytes { ppsPtr in
+                guard let spsBase = spsPtr.baseAddress,
+                      let ppsBase = ppsPtr.baseAddress else {
+                    return OSStatus(kCMFormatDescriptionError_InvalidParameter)
+                }
                 let paramSets: [UnsafePointer<UInt8>] = [
-                    spsPtr.baseAddress!.assumingMemoryBound(to: UInt8.self),
-                    ppsPtr.baseAddress!.assumingMemoryBound(to: UInt8.self)
+                    spsBase.assumingMemoryBound(to: UInt8.self),
+                    ppsBase.assumingMemoryBound(to: UInt8.self)
                 ]
                 let paramSetSizes: [Int] = [sps.count, pps.count]
                 return CMVideoFormatDescriptionCreateFromH264ParameterSets(
@@ -264,6 +268,8 @@ class VideoDecoder: ObservableObject {
             guard let self = self else { return }
             guard status == noErr, let pixelBuffer = pixelBuffer else {
                 if status != noErr {
+                    // Benign race on decodeErrorCount from VT's callback thread —
+                    // only used for log throttling, not correctness.
                     self.decodeErrorCount += 1
                     if self.decodeErrorCount <= 5 || self.decodeErrorCount % 100 == 0 {
                         self.logger.error("Decode error: \(status) (count: \(self.decodeErrorCount))")
