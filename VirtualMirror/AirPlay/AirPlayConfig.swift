@@ -5,6 +5,14 @@ import Security
 struct AirPlayConfig {
     static let serverName = "VirtualMirror"
     static let model = "AppleTV3,2"
+
+    // MARK: - Security
+    // When true, pair-verify stage 2 rejects clients whose Ed25519 signature
+    // fails to validate (the cryptographically correct behaviour). Defaults to
+    // false because some senders use signature semantics we don't fully
+    // replicate, and rejecting them would break mirroring. Flip to true once
+    // the signature input is verified against real devices.
+    static let requireClientSignature = false
     static let sourceVersion = "220.68"
     static let protoVersion = "1.1"
     static let firmwareVersion = "p20.20"

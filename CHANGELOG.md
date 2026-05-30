@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `AirPlayConfig.requireClientSignature` flag: when enabled, pair-verify stage 2 rejects clients whose Ed25519 signature fails to validate (closing the connection with `470`) instead of proceeding regardless
+- GitHub Actions CI (`.github/workflows/ci.yml`) building and running the test suite on every push/PR, plus a non-blocking SwiftLint job
+- `.swiftlint.yml` baseline configuration
+- 12 new tests: HTTPParser hardening + fuzzing (`HTTPParserHardeningTests`) and the pair-verify ECDH path / signature policy (`PairVerifyHandlerTests`), bringing the suite to 48 tests
+
+### Security
+
+- FairPlay `decryptMessage` now rejects an out-of-range `mode` byte (read from the network message) before using it to index the `message_key`/`message_iv` tables, preventing an out-of-bounds read on malformed input
+- HTTPParser treats a present-but-unparseable `Content-Length` as a hard error rather than silently defaulting to `0` (which could desync the request stream), and rejects header blocks that aren't valid UTF-8 instead of stalling
+
+### Changed
+
+- Replaced magic numbers with named constants: `AirPlayConnection.StreamType` (screen-mirror `110` / audio `96`) and `MirrorStreamReceiver.maxVideoPayloadSize`
+- Documented why `AirPlayManager.videoDecoder` is intentionally `nonisolated` (fed from the off-main decode thread)
+
+### Fixed
+
+- Audio data socket reads now use a 64 KB buffer instead of 2 KB, so large/redundant UDP audio datagrams are no longer silently truncated
+- The control connection is now torn down on a failed response send, rather than left half-dead waiting for input
+
 ## [0.3.2] - 2026-03-17
 
 ### Added

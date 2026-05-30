@@ -37,6 +37,10 @@ class AirPlayManager: ObservableObject {
 
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "AirPlayManager")
 
+    // `nonisolated` on purpose: the decoder is fed from the off-main network/
+    // decode thread (via MirrorStreamReceiver), so it must be reachable without
+    // hopping to the main actor on every frame. VideoDecoder is responsible for
+    // its own internal thread-safety.
     nonisolated let videoDecoder = VideoDecoder()
     private var airPlayService: AirPlayService?
     private var airPlayServer: AirPlayServer?

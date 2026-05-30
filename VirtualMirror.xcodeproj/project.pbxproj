@@ -41,6 +41,8 @@
 		T1000002 /* AirPlayStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000002; };
 		T1000003 /* StreamKeyDerivationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000003; };
 		T1000004 /* HTTPResponseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000004; };
+		T1000005 /* HTTPParserHardeningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000005; };
+		T1000006 /* PairVerifyHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000006; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -84,6 +86,8 @@
 		T2000002 /* AirPlayStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPlayStateTests.swift; sourceTree = "<group>"; };
 		T2000003 /* StreamKeyDerivationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamKeyDerivationTests.swift; sourceTree = "<group>"; };
 		T2000004 /* HTTPResponseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPResponseTests.swift; sourceTree = "<group>"; };
+		T2000005 /* HTTPParserHardeningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPParserHardeningTests.swift; sourceTree = "<group>"; };
+		T2000006 /* PairVerifyHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairVerifyHandlerTests.swift; sourceTree = "<group>"; };
 		T3000001 /* VirtualMirrorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VirtualMirrorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -129,6 +133,8 @@
 				T1000002 /* AirPlayStateTests.swift in Sources */,
 				T1000003 /* StreamKeyDerivationTests.swift in Sources */,
 				T1000004 /* HTTPResponseTests.swift in Sources */,
+				T1000005 /* HTTPParserHardeningTests.swift in Sources */,
+				T1000006 /* PairVerifyHandlerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,6 +256,8 @@
 				T2000002 /* AirPlayStateTests.swift */,
 				T2000003 /* StreamKeyDerivationTests.swift */,
 				T2000004 /* HTTPResponseTests.swift */,
+				T2000005 /* HTTPParserHardeningTests.swift */,
+				T2000006 /* PairVerifyHandlerTests.swift */,
 			);
 			path = VirtualMirrorTests;
 			sourceTree = "<group>";
