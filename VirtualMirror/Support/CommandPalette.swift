@@ -339,30 +339,37 @@ final class CommandPaletteController {
 @MainActor
 enum CommandRegistry {
     static func items() -> [CommandItem] {
-        let app = AppDelegate.shared
-        let manager = app?.airPlayManager
+        let registry = ReceiverRegistry.shared
+        let manager = registry.focusedManager
         var out: [CommandItem] = []
 
-        out.append(CommandItem(id: "toggle-window", icon: "macwindow", title: "Show / Hide Window",
-                               subtitle: "Toggle the main mirroring window", tint: .blue) {
-            app?.commandToggleWindow()
-        })
+        if registry.canAddReceiver {
+            out.append(CommandItem(id: "new-receiver", icon: "plus.rectangle.on.rectangle",
+                                   title: "New Receiver", subtitle: "Open another AirPlay receiver", tint: .blue) {
+                registry.openNewReceiver()
+            })
+        }
 
         if let manager {
             if case .mirroring = manager.state {
                 out.append(CommandItem(id: "mute", icon: manager.isMuted ? "speaker.wave.2.fill" : "speaker.slash.fill",
-                                       title: manager.isMuted ? "Unmute Audio" : "Mute Audio", tint: .blue) {
+                                       title: manager.isMuted ? "Unmute Audio" : "Mute Audio",
+                                       subtitle: manager.displayName, tint: .blue) {
                     manager.volume = manager.isMuted ? 1 : 0
                 })
             }
-            out.append(CommandItem(id: "restart", icon: "arrow.clockwise", title: "Restart AirPlay",
-                                   subtitle: "Stop and restart the receiver", tint: .orange) {
+            out.append(CommandItem(id: "restart", icon: "arrow.clockwise", title: "Restart This Receiver",
+                                   subtitle: manager.displayName, tint: .orange) {
                 manager.restart()
+            })
+            out.append(CommandItem(id: "close", icon: "xmark.rectangle", title: "Close This Receiver",
+                                   subtitle: manager.displayName, tint: .red) {
+                registry.window(for: manager)?.performClose(nil)
             })
         }
 
         out.append(CommandItem(id: "updates", icon: "arrow.triangle.2.circlepath", title: "Check for Updates…", tint: .green) {
-            app?.commandCheckForUpdates()
+            AppDelegate.shared?.commandCheckForUpdates()
         })
         out.append(CommandItem(id: "help", icon: "questionmark.circle", title: "VirtualMirror Help",
                                shortcut: nil, tint: .blue) {
