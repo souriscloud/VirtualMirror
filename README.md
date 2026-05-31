@@ -4,6 +4,7 @@ AirPlay screen mirroring receiver for macOS. Mirror your iPhone or iPad screen t
 
 ![macOS](https://img.shields.io/badge/macOS-14.0%2B-blue)
 ![License](https://img.shields.io/badge/license-GPL--3.0-green)
+[![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support-ff5e5b?logo=ko-fi&logoColor=white)](https://ko-fi.com/souriscloud)
 
 <!-- TODO: Add screenshot here -->
 <!-- ![Screenshot](screenshot.png) -->
@@ -41,12 +42,17 @@ Hover over the mirroring window to reveal the volume slider. Click the speaker i
 
 ### Menu Bar
 
-The menu bar icon shows live connection status:
+The menu bar icon shows live connection status. Click it for:
+
 - **Show/Hide Window** — Toggle the main window
-- **Check for Updates...** — Manually check for a new version
-- **About VirtualMirror...** — Version info and credits
+- **Check for Updates…** — Manually check for a new version
+- **VirtualMirror Help** — Built-in guide: mirroring, audio, troubleshooting, privacy
+- **Send Feedback…** — Report a bug or request a feature (opens a pre-filled GitHub issue)
+- **About VirtualMirror…** — Version info, credits, and support links
 
 ## Troubleshooting
+
+> The in-app **VirtualMirror Help** (menu bar → VirtualMirror Help) covers all of this with step-by-step guidance.
 
 ### VirtualMirror doesn't appear in Screen Mirroring list
 
@@ -79,6 +85,13 @@ Build and run from Xcode (Cmd+R), or from the command line:
 ```bash
 xcodebuild build -project VirtualMirror.xcodeproj -scheme VirtualMirror -configuration Debug
 ```
+
+## Support & Feedback
+
+VirtualMirror is free and open source, built by one person.
+
+- 🐛 **Found a bug or have an idea?** Use **Send Feedback…** in the menu bar (it opens a pre-filled GitHub issue), or file one directly at [GitHub Issues](https://github.com/souriscloud/VirtualMirror/issues).
+- ☕ **Like the app?** [Support it on Ko-fi](https://ko-fi.com/souriscloud) — it keeps the project going.
 
 ## Acknowledgments
 

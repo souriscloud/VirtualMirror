@@ -36,6 +36,9 @@
 		A1000028 /* AudioDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000035; };
 		A1000029 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000036; };
 		A1000030 /* StreamKeyDerivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000037; };
+		A1000031 /* GitHubFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000038; };
+		A1000032 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000039; };
+		A1000033 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000040; };
 		SP000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SP000002; };
 		T1000001 /* HTTPParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000001; };
 		T1000002 /* AirPlayStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000002; };
@@ -82,6 +85,9 @@
 		B1000035 /* AudioDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDecoder.swift; sourceTree = "<group>"; };
 		B1000036 /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		B1000037 /* StreamKeyDerivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamKeyDerivation.swift; sourceTree = "<group>"; };
+		B1000038 /* GitHubFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubFeedback.swift; sourceTree = "<group>"; };
+		B1000039 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
+		B1000040 /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
 		T2000001 /* HTTPParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPParserTests.swift; sourceTree = "<group>"; };
 		T2000002 /* AirPlayStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPlayStateTests.swift; sourceTree = "<group>"; };
 		T2000003 /* StreamKeyDerivationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamKeyDerivationTests.swift; sourceTree = "<group>"; };
@@ -166,8 +172,19 @@
 				D1000006 /* Video */,
 				D1000007 /* Networking */,
 				D1000008 /* Audio */,
+				D1000012 /* Support */,
 			);
 			path = VirtualMirror;
+			sourceTree = "<group>";
+		};
+		D1000012 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				B1000038 /* GitHubFeedback.swift */,
+				B1000039 /* FeedbackView.swift */,
+				B1000040 /* HelpView.swift */,
+			);
+			path = Support;
 			sourceTree = "<group>";
 		};
 		D1000003 /* AirPlay */ = {
@@ -378,6 +395,9 @@
 				A1000028 /* AudioDecoder.swift in Sources */,
 				A1000029 /* AudioPlayer.swift in Sources */,
 				A1000030 /* StreamKeyDerivation.swift in Sources */,
+				A1000031 /* GitHubFeedback.swift in Sources */,
+				A1000032 /* FeedbackView.swift in Sources */,
+				A1000033 /* HelpView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

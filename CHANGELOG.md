@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- In-app **Help** (menu bar → VirtualMirror Help): a self-contained guide covering mirroring, audio, troubleshooting, updates, and privacy
+- **Send Feedback…** (menu bar and About): composes a pre-filled GitHub issue (bug / feature / question) and opens it in the browser, with a "Copy report" fallback and an optional, non-identifying diagnostics line (app/macOS version + CPU arch only)
+- **Ko-fi support** link in the About window and Help, and a Ko-fi badge in the README
 - `AirPlayConfig.requireClientSignature` flag: when enabled, pair-verify stage 2 rejects clients whose Ed25519 signature fails to validate (closing the connection with `470`) instead of proceeding regardless
 - GitHub Actions CI (`.github/workflows/ci.yml`) building and running the test suite on every push/PR, plus a non-blocking SwiftLint job
 - `.swiftlint.yml` baseline configuration

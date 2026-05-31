@@ -81,9 +81,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         checkForUpdatesItem.target = updaterController
         menu.addItem(checkForUpdatesItem)
 
+        let helpItem = NSMenuItem(title: "VirtualMirror Help", action: #selector(showHelp), keyEquivalent: "")
+        helpItem.target = self
+        menu.addItem(helpItem)
+
+        let feedbackItem = NSMenuItem(title: "Send Feedback...", action: #selector(showFeedback), keyEquivalent: "")
+        feedbackItem.target = self
+        menu.addItem(feedbackItem)
+
         let aboutItem = NSMenuItem(title: "About VirtualMirror...", action: #selector(showAbout), keyEquivalent: "")
         aboutItem.target = self
         menu.addItem(aboutItem)
+
+        menu.addItem(.separator())
 
         let quitItem = NSMenuItem(title: "Quit VirtualMirror", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
@@ -149,6 +159,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AboutWindowController.shared.showWindow()
     }
 
+    @objc private func showHelp() {
+        HelpWindowController.shared.showWindow()
+    }
+
+    @objc private func showFeedback() {
+        FeedbackWindowController.shared.showWindow()
+    }
+
     @objc private func quit() {
         NSApp.terminate(nil)
     }
@@ -191,16 +209,83 @@ class AboutWindowController {
 
         let aboutView = AboutView()
         let hostingView = NSHostingView(rootView: aboutView)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 320, height: 400)
+        hostingView.frame = NSRect(x: 0, y: 0, width: 320, height: 452)
 
         let w = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 400),
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 452),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
         w.contentView = hostingView
         w.title = "About VirtualMirror"
+        w.center()
+        w.isReleasedWhenClosed = false
+        w.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        self.window = w
+    }
+}
+
+// MARK: - Help Window Controller
+
+@MainActor
+class HelpWindowController {
+    static let shared = HelpWindowController()
+    private var window: NSWindow?
+
+    func showWindow() {
+        if let existing = window, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let hostingView = NSHostingView(rootView: HelpView())
+        let w = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 820, height: 560),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        w.contentView = hostingView
+        w.title = "VirtualMirror Help"
+        w.center()
+        w.isReleasedWhenClosed = false
+        w.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        self.window = w
+    }
+}
+
+// MARK: - Feedback Window Controller
+
+@MainActor
+class FeedbackWindowController {
+    static let shared = FeedbackWindowController()
+    private var window: NSWindow?
+
+    func showWindow() {
+        if let existing = window, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let feedbackView = FeedbackView { [weak self] in
+            self?.window?.close()
+        }
+        let hostingView = NSHostingView(rootView: feedbackView)
+        hostingView.frame = NSRect(x: 0, y: 0, width: 480, height: 460)
+
+        let w = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 460),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        w.contentView = hostingView
+        w.title = "Send Feedback"
         w.center()
         w.isReleasedWhenClosed = false
         w.makeKeyAndOrderFront(nil)
