@@ -40,9 +40,12 @@ class HTTPParser {
             return .needsMore
         }
 
+        // headerData is a complete header block (terminated by \r\n\r\n), so
+        // invalid UTF-8 here is malformed input, not a partial read — fail fast
+        // rather than waiting forever for "more" bytes that will never fix it.
         let headerData = data[data.startIndex..<headerEnd]
         guard let headerString = String(data: headerData, encoding: .utf8) else {
-            return .needsMore
+            return .error("Header block is not valid UTF-8")
         }
 
         var lines = headerString.components(separatedBy: "\r\n")
@@ -67,12 +70,22 @@ class HTTPParser {
             }
         }
 
-        // Determine body length
+        // Determine body length. A *present* Content-Length that doesn't parse
+        // to a non-negative integer is a hard error — silently treating it as 0
+        // would desync the stream (the body would be parsed as the next request).
         let bodyStart = headerEnd + 4 // skip \r\n\r\n
-        let contentLength = Int(headers["Content-Length"] ?? headers["content-length"] ?? "0") ?? 0
+        let contentLength: Int
+        if let clString = headers["Content-Length"] ?? headers["content-length"] {
+            guard let cl = Int(clString), cl >= 0 else {
+                return .error("Malformed Content-Length: \(clString)")
+            }
+            contentLength = cl
+        } else {
+            contentLength = 0
+        }
 
-        if contentLength < 0 || contentLength > maxContentLength {
-            return .error("Content-Length \(contentLength) out of range (max \(maxContentLength))")
+        if contentLength > maxContentLength {
+            return .error("Content-Length \(contentLength) exceeds maximum (\(maxContentLength))")
         }
 
         if contentLength > 0 {

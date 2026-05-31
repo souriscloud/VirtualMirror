@@ -46,11 +46,27 @@ struct AboutView: View {
                     .font(.system(size: 11))
             }
 
-            Button("Acknowledgments") {
-                showAcknowledgments = true
+            Link(destination: URL(string: "https://ko-fi.com/souriscloud")!) {
+                Label("Support on Ko-fi", systemImage: "cup.and.saucer.fill")
+                    .font(.system(size: 12, weight: .medium))
             }
-            .font(.system(size: 11))
-            .buttonStyle(.link)
+            .buttonStyle(.bordered)
+            .tint(.pink)
+            .padding(.top, 2)
+
+            HStack(spacing: 16) {
+                Button("Send Feedback") {
+                    FeedbackWindowController.shared.showWindow()
+                }
+                .font(.system(size: 11))
+                .buttonStyle(.link)
+
+                Button("Acknowledgments") {
+                    showAcknowledgments = true
+                }
+                .font(.system(size: 11))
+                .buttonStyle(.link)
+            }
 
             Text("Made by Souris")
                 .font(.system(size: 11, weight: .medium))
@@ -58,7 +74,7 @@ struct AboutView: View {
 
             Spacer().frame(height: 8)
         }
-        .frame(width: 320, height: 380)
+        .frame(width: 320, height: 452)
         .sheet(isPresented: $showAcknowledgments) {
             AcknowledgmentsView()
         }

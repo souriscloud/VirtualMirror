@@ -333,6 +333,12 @@ void decryptMessage(unsigned char* messageIn, unsigned char* decryptedMessage)
    uint32_t key_schedule[11][4];
    int mode = messageIn[12];  // 0,1,2,3
    printf("mode = %02x\n", mode);
+   // mode is attacker-controlled (read from network message) and is used as an
+   // index into message_key[4][...] / message_iv[4][...] below. Reject anything
+   // outside 0..3 to avoid an out-of-bounds read; a bad mode just fails the
+   // handshake downstream (decryptedMessage is left untouched).
+   if (mode < 0 || mode > 3)
+      return;
    generate_key_schedule(initial_session_key, key_schedule);
       
    // For M0-M6 we follow the same pattern

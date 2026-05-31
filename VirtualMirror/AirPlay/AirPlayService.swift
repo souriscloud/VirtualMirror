@@ -15,19 +15,20 @@ class AirPlayService {
     private var airplaySource: DispatchSourceRead?
     private var raopSource: DispatchSourceRead?
 
-    func startAdvertising(port: Int) {
-        logger.info("Starting Bonjour advertisement on port \(port)")
+    func startAdvertising(identity: ReceiverIdentity) {
+        let port = Int(identity.ports.airplay)
+        logger.info("Starting Bonjour advertisement for \"\(identity.name)\" on port \(port)")
 
         let port16 = UInt16(port)
 
         // Advertise _airplay._tcp
-        let airplayTXT = buildAirPlayTXTData()
+        let airplayTXT = AirPlayConfig.airplayTXTRecord(identity)
         var airplayServiceRef: DNSServiceRef?
         let airplayErr = DNSServiceRegister(
             &airplayServiceRef,
             0,                          // flags
             0,                          // interfaceIndex (all)
-            AirPlayConfig.serverName,   // name
+            identity.name,              // name
             "_airplay._tcp",            // regtype
             nil,                        // domain (default)
             nil,                        // host (default)
@@ -46,8 +47,8 @@ class AirPlayService {
         }
 
         // Advertise _raop._tcp with deviceID@name format
-        let raopName = "\(AirPlayConfig.deviceID.replacingOccurrences(of: ":", with: ""))@\(AirPlayConfig.serverName)"
-        let raopTXT = buildRAOPTXTData()
+        let raopName = "\(identity.deviceID.replacingOccurrences(of: ":", with: ""))@\(identity.name)"
+        let raopTXT = AirPlayConfig.raopTXTRecord(identity)
         var raopServiceRef: DNSServiceRef?
         let raopErr = DNSServiceRegister(
             &raopServiceRef,
@@ -70,6 +71,14 @@ class AirPlayService {
         } else {
             logger.error("Failed to register RAOP service: \(raopErr)")
         }
+    }
+
+    /// Re-advertises under a new name (used by live rename). The TCP listener
+    /// and any active mirroring session are untouched — only the Bonjour record
+    /// the iPhone browses changes.
+    func updateName(identity: ReceiverIdentity) {
+        stopAdvertising()
+        startAdvertising(identity: identity)
     }
 
     func stopAdvertising() {
@@ -108,14 +117,4 @@ class AirPlayService {
         return source
     }
 
-    // MARK: - TXT Record Building
-
-    /// Delegates to AirPlayConfig for the canonical TXT record definitions.
-    private func buildAirPlayTXTData() -> [UInt8] {
-        AirPlayConfig.airplayTXTRecord()
-    }
-
-    private func buildRAOPTXTData() -> [UInt8] {
-        AirPlayConfig.raopTXTRecord()
-    }
 }

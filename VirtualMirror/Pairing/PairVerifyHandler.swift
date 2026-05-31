@@ -3,8 +3,21 @@ import CryptoKit
 import CommonCrypto
 import os
 
+/// Outcome of a pair-verify exchange.
+enum PairVerifyResult {
+    /// Continue the session; the associated value is the response body.
+    case ok(Data)
+    /// Reject the client (signature enforcement is on and verification failed).
+    case reject
+}
+
 class PairVerifyHandler {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "PairVerify")
+    private let identity: ReceiverIdentity
+
+    init(identity: ReceiverIdentity) {
+        self.identity = identity
+    }
 
     // Ephemeral Curve25519 key pair for this session
     private var ephemeralPrivateKey: Curve25519.KeyAgreement.PrivateKey?
@@ -19,17 +32,17 @@ class PairVerifyHandler {
     /// Handle pair-verify request.
     /// Stage is determined by the first byte of the request (0x01 = stage 1, 0x00 = stage 2).
     /// Returns the response body.
-    func handle(requestBody: Data) -> Data {
+    func handle(requestBody: Data) -> PairVerifyResult {
         guard requestBody.count >= 4 else {
             logger.error("pair-verify: body too short (\(requestBody.count) bytes)")
-            return Data()
+            return .ok(Data())
         }
 
         let stageFlag = requestBody[requestBody.startIndex]
         logger.debug("pair-verify: flag=\(stageFlag), body=\(requestBody.count) bytes")
 
         if stageFlag == 1 {
-            return handleStage1(requestBody: requestBody)
+            return .ok(handleStage1(requestBody: requestBody))
         } else {
             return handleStage2(requestBody: requestBody)
         }
@@ -81,7 +94,7 @@ class PairVerifyHandler {
         signatureInput.append(privateKey.publicKey.rawRepresentation)
         signatureInput.append(clientPubKeyData)
 
-        guard let signature = try? AirPlayConfig.ed25519PrivateKey.signature(for: signatureInput) else {
+        guard let signature = try? identity.ed25519PrivateKey.signature(for: signatureInput) else {
             logger.error("pair-verify stage 1: signing failed")
             return Data()
         }
@@ -98,47 +111,63 @@ class PairVerifyHandler {
         return responseData
     }
 
-    private func handleStage2(requestBody: Data) -> Data {
+    private func handleStage2(requestBody: Data) -> PairVerifyResult {
         // Stage 2:
         // Receive: [4 bytes flag 0x00,0x00,0x00,0x00] + [encrypted client data]
         // Decrypt and verify the client's Ed25519 signature.
 
         logger.debug("pair-verify stage 2: verifying (\(requestBody.count) bytes)")
 
-        if requestBody.count > 4, let aesKey = aesKey, let aesIV = aesIV {
-            let encryptedData = Data(requestBody.suffix(from: requestBody.startIndex + 4))
-            let decrypted = aesCTR(key: aesKey, iv: aesIV, data: encryptedData)
+        let verified = verifyClientSignature(requestBody: requestBody)
 
-            // The decrypted data contains: [32 bytes client Ed25519 pubkey] + [64 bytes signature]
-            if decrypted.count >= 96,
-               let clientCurveKey = clientPublicKeyData,
-               let serverCurveKey = ephemeralPrivateKey?.publicKey.rawRepresentation {
-                let clientSigningKeyData = decrypted[decrypted.startIndex..<decrypted.startIndex + 32]
-                let clientSignature = decrypted[decrypted.startIndex + 32..<decrypted.startIndex + 96]
+        if !verified && AirPlayConfig.requireClientSignature {
+            logger.error("pair-verify stage 2: client signature verification failed — rejecting (requireClientSignature is on)")
+            return .reject
+        }
 
-                // Verify: client signed (client_curve25519_pubkey + server_curve25519_pubkey)
-                var verifyInput = Data()
-                verifyInput.append(clientCurveKey)
-                verifyInput.append(serverCurveKey)
-
-                if let clientSigningKey = try? Curve25519.Signing.PublicKey(rawRepresentation: clientSigningKeyData) {
-                    let isValid = clientSigningKey.isValidSignature(Data(clientSignature), for: verifyInput)
-                    if isValid {
-                        logger.info("pair-verify stage 2: client signature verified")
-                    } else {
-                        logger.warning("pair-verify stage 2: client signature invalid (proceeding anyway for compatibility)")
-                    }
-                } else {
-                    logger.warning("pair-verify stage 2: could not parse client signing key")
-                }
-            } else {
-                logger.debug("pair-verify stage 2: decrypted data too short for verification (\(decrypted.count) bytes)")
-            }
+        if !verified {
+            logger.warning("pair-verify stage 2: client signature not verified — proceeding (requireClientSignature is off)")
         }
 
         logger.info("pair-verify complete")
         // Response: empty body (200 OK)
-        return Data()
+        return .ok(Data())
+    }
+
+    /// Returns true only if the client's Ed25519 signature over
+    /// (client_curve25519_pubkey + server_curve25519_pubkey) validates.
+    private func verifyClientSignature(requestBody: Data) -> Bool {
+        guard requestBody.count > 4, let aesKey = aesKey, let aesIV = aesIV else { return false }
+
+        let encryptedData = Data(requestBody.suffix(from: requestBody.startIndex + 4))
+        let decrypted = aesCTR(key: aesKey, iv: aesIV, data: encryptedData)
+
+        // The decrypted data contains: [32 bytes client Ed25519 pubkey] + [64 bytes signature]
+        guard decrypted.count >= 96,
+              let clientCurveKey = clientPublicKeyData,
+              let serverCurveKey = ephemeralPrivateKey?.publicKey.rawRepresentation else {
+            logger.debug("pair-verify stage 2: decrypted data too short for verification (\(decrypted.count) bytes)")
+            return false
+        }
+
+        let clientSigningKeyData = decrypted[decrypted.startIndex..<decrypted.startIndex + 32]
+        let clientSignature = decrypted[decrypted.startIndex + 32..<decrypted.startIndex + 96]
+
+        // Verify: client signed (client_curve25519_pubkey + server_curve25519_pubkey)
+        var verifyInput = Data()
+        verifyInput.append(clientCurveKey)
+        verifyInput.append(serverCurveKey)
+
+        guard let clientSigningKey = try? Curve25519.Signing.PublicKey(rawRepresentation: clientSigningKeyData) else {
+            logger.warning("pair-verify stage 2: could not parse client signing key")
+            return false
+        }
+
+        let isValid = clientSigningKey.isValidSignature(Data(clientSignature), for: verifyInput)
+        if isValid {
+            logger.info("pair-verify stage 2: client signature verified")
+        }
+        return isValid
     }
 
     // MARK: - Crypto helpers

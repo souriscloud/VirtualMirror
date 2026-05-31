@@ -6,51 +6,60 @@ struct ContentView: View {
     @State private var showKeychainExplanation = false
 
     var body: some View {
-        ZStack {
-            Color.black
-                .ignoresSafeArea()
+        VStack(spacing: 0) {
+            ZStack {
+                Color.black
+                    .ignoresSafeArea()
 
-            if showKeychainExplanation {
-                KeychainExplanationView {
-                    withAnimation(.easeInOut(duration: 0.4)) {
-                        showKeychainExplanation = false
-                        hasCompletedFirstLaunch = true
-                    }
-                    airPlayManager.start()
-                }
-            } else {
-                switch airPlayManager.state {
-                case .idle:
-                    IdleView()
-
-                case .connecting(let deviceName):
-                    VStack(spacing: 16) {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                            .tint(.white)
-                        Text("Connecting to \(deviceName)...")
-                            .font(.title3)
-                            .foregroundColor(.white)
-                    }
-
-                case .mirroring(_):
-                    MirroringView(airPlayManager: airPlayManager)
-
-                case .error(let message):
-                    VStack(spacing: 16) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 48))
-                            .foregroundColor(.yellow)
-                        Text(message)
-                            .font(.body)
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
-                        Button("Retry") {
-                            airPlayManager.restart()
+                if showKeychainExplanation {
+                    KeychainExplanationView {
+                        withAnimation(.easeInOut(duration: 0.4)) {
+                            showKeychainExplanation = false
+                            hasCompletedFirstLaunch = true
                         }
-                        .buttonStyle(.bordered)
+                        airPlayManager.start()
+                    }
+                } else {
+                    switch airPlayManager.state {
+                    case .idle:
+                        IdleView()
+
+                    case .connecting(let deviceName):
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(.white)
+                            Text("Connecting to \(deviceName)...")
+                                .font(.title3)
+                                .foregroundColor(.white)
+                        }
+
+                    case .mirroring(_):
+                        MirroringView(airPlayManager: airPlayManager)
+
+                    case .error(let message):
+                        VStack(spacing: 16) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 48))
+                                .foregroundColor(.yellow)
+                            Text(message)
+                                .font(.body)
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                            Button("Retry") {
+                                airPlayManager.restart()
+                            }
+                            .buttonStyle(.bordered)
+                        }
                     }
                 }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // Connectivity footer (hidden during the first-launch explainer)
+            if !showKeychainExplanation {
+                Divider()
+                ConnectivityFooter(airPlayManager: airPlayManager)
             }
         }
         .frame(minWidth: 300, minHeight: 400)
@@ -89,7 +98,7 @@ struct KeychainExplanationView: View {
                     .frame(width: 160, height: 160)
                     .opacity(appeared ? 1 : 0)
 
-                Image(systemName: "key.fill")
+                Image(systemName: "lock.shield.fill")
                     .font(.system(size: 52, weight: .light))
                     .foregroundStyle(
                         LinearGradient(
@@ -104,7 +113,7 @@ struct KeychainExplanationView: View {
 
             Spacer().frame(height: 28)
 
-            Text("Secure Identity")
+            Text("Local & Private")
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundColor(.white)
                 .opacity(appeared ? 1 : 0)
@@ -112,7 +121,7 @@ struct KeychainExplanationView: View {
 
             Spacer().frame(height: 12)
 
-            Text("VirtualMirror generates a unique cryptographic key to identify itself to your Apple devices during AirPlay pairing.")
+            Text("VirtualMirror turns this Mac into an AirPlay receiver. Your iPhone or iPad streams straight here over your local network.")
                 .font(.system(size: 13))
                 .foregroundColor(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
@@ -123,7 +132,7 @@ struct KeychainExplanationView: View {
 
             Spacer().frame(height: 10)
 
-            Text("This key is stored securely in your macOS Keychain. You may see a system prompt asking for permission — this is normal and only happens once.")
+            Text("Nothing leaves your Mac — no account, no cloud, no telemetry. Each receiver uses a fresh pairing identity, generated on the spot.")
                 .font(.system(size: 12))
                 .foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)

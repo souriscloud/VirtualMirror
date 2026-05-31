@@ -281,7 +281,9 @@ class AudioStreamReceiver {
 
     /// Reads all available UDP datagrams from the data socket.
     private func readDataPackets() {
-        var buffer = [UInt8](repeating: 0, count: 2048)
+        // Sized to the maximum UDP payload so large/redundant audio datagrams
+        // aren't silently truncated (a short read corrupts the RTP packet).
+        var buffer = [UInt8](repeating: 0, count: 65535)
         var recvErrorCount = 0
         while true {
             let bytesRead = recv(dataSocket, &buffer, buffer.count, 0)

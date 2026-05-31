@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Multiple receivers, one per window**: each window is now an independent AirPlay receiver with its own name, port slot, and pairing identity, so several iPhones/iPads can mirror side by side and each appears separately in the Screen Mirroring list. New Receiver (⌘N) opens another; the menu bar lists all live receivers; the app stays resident in the menu bar with no windows open
+- **Rename a receiver** (command palette → Rename This Receiver…): updates the window title and re-advertises over Bonjour live, without dropping an active session
+- **Command Palette (⌘K)**: a searchable, keyboard-driven list of every action (new receiver, rename/close/restart this receiver, mute, check for updates, Help, Feedback, Ko-fi, quit) in a floating panel
+- **Connectivity footer** on the main window: live status, connected device, and — while mirroring — resolution, frame rate, session time, and a mute indicator, plus a quiet Ko-fi link
+- In-app **Help** (menu bar → VirtualMirror Help): a self-contained guide covering mirroring, audio, the command palette & shortcuts, troubleshooting, updates, and privacy
+- **Send Feedback…** (menu bar and About): composes a pre-filled GitHub issue (bug / feature / question) and opens it in the browser, with a "Copy report" fallback and an optional, non-identifying diagnostics line (app/macOS version + CPU arch only)
+- **Ko-fi support** link in the About window and Help, and a Ko-fi badge in the README
+- `AirPlayConfig.requireClientSignature` flag: when enabled, pair-verify stage 2 rejects clients whose Ed25519 signature fails to validate (closing the connection with `470`) instead of proceeding regardless
+- GitHub Actions CI (`.github/workflows/ci.yml`) building and running the test suite on every push/PR, plus a non-blocking SwiftLint job
+- `.swiftlint.yml` baseline configuration
+- 12 new tests: HTTPParser hardening + fuzzing (`HTTPParserHardeningTests`) and the pair-verify ECDH path / signature policy (`PairVerifyHandlerTests`), bringing the suite to 48 tests
+
+### Security
+
+- FairPlay `decryptMessage` now rejects an out-of-range `mode` byte (read from the network message) before using it to index the `message_key`/`message_iv` tables, preventing an out-of-bounds read on malformed input
+- HTTPParser treats a present-but-unparseable `Content-Length` as a hard error rather than silently defaulting to `0` (which could desync the request stream), and rejects header blocks that aren't valid UTF-8 instead of stalling
+
+### Changed
+
+- Pairing identity is now **ephemeral and per-receiver** (a fresh device ID and Ed25519 key generated in memory per window) instead of one long-term key in the Keychain — no Keychain prompt, clean slate each launch
+- Closing a receiver window now closes that receiver; the app stays resident in the menu bar (closing the last window no longer hides a single shared window)
+- The standard app-menu **About VirtualMirror** now opens the app's own About panel (with Ko-fi / feedback links) instead of the default system one — a single, consistent About
+- Disabled automatic window tabbing (no "Show Tab Bar" / tab UI on the mirroring window)
+- Replaced magic numbers with named constants: `AirPlayConnection.StreamType` (screen-mirror `110` / audio `96`) and `MirrorStreamReceiver.maxVideoPayloadSize`
+- Documented why `AirPlayManager.videoDecoder` is intentionally `nonisolated` (fed from the off-main decode thread)
+
+### Fixed
+
+- Audio data socket reads now use a 64 KB buffer instead of 2 KB, so large/redundant UDP audio datagrams are no longer silently truncated
+- The control connection is now torn down on a failed response send, rather than left half-dead waiting for input
+
 ## [0.3.2] - 2026-03-17
 
 ### Added

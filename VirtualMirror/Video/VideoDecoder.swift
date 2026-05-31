@@ -19,6 +19,16 @@ class VideoDecoder: ObservableObject {
     // Output: decoded sample buffers for display
     @Published var latestSampleBuffer: CMSampleBuffer?
 
+    /// Lightweight, thread-safe decode stats for the connectivity footer.
+    /// Read via `statsSnapshot()` from any thread (the decode path runs off-main).
+    struct Stats { var width = 0; var height = 0; var totalFrames = 0 }
+    private let statsLock = NSLock()
+    private var stats = Stats()
+    func statsSnapshot() -> Stats {
+        statsLock.lock(); defer { statsLock.unlock() }
+        return stats
+    }
+
     /// Resets the decoder state so it can be reconfigured with new codec parameters.
     /// Called when the mirroring session reconnects (e.g. after rotation or lock/unlock).
     func reset() {
@@ -32,6 +42,7 @@ class VideoDecoder: ObservableObject {
         lastPPS = nil
         frameCount = 0
         decodeErrorCount = 0
+        statsLock.lock(); stats = Stats(); statsLock.unlock()
         DispatchQueue.main.async { [weak self] in
             self?.latestSampleBuffer = nil
         }
@@ -154,6 +165,7 @@ class VideoDecoder: ObservableObject {
         self.lastSPS = sps
         self.lastPPS = pps
         let dimensions = CMVideoFormatDescriptionGetDimensions(desc)
+        statsLock.lock(); stats.width = Int(dimensions.width); stats.height = Int(dimensions.height); statsLock.unlock()
         logger.info("Video format: \(dimensions.width)x\(dimensions.height)")
 
         // Create decompression session
@@ -195,6 +207,7 @@ class VideoDecoder: ObservableObject {
         }
 
         frameCount += 1
+        statsLock.lock(); stats.totalFrames += 1; statsLock.unlock()
 
         // The data contains length-prefixed NAL units
         // We need to wrap each in a CMBlockBuffer and create a CMSampleBuffer

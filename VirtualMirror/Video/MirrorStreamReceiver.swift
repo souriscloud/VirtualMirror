@@ -13,6 +13,9 @@ class MirrorStreamReceiver {
 
     // Packet header size
     private static let headerSize = 128
+    /// Upper bound on a single video payload. A larger value means our header
+    /// parsing has desynced (or the input is hostile), so we drop the buffer.
+    private static let maxVideoPayloadSize: UInt32 = 10_000_000
 
     // Generation counter: incremented on every resetStream() / new connection.
     // Pending receiveData callbacks from stale connections compare their captured
@@ -205,7 +208,7 @@ class MirrorStreamReceiver {
             let totalPacketSize = MirrorStreamReceiver.headerSize + Int(payloadSize)
 
             // Sanity check - if payload is unreasonably large, our parsing is probably wrong
-            if payloadSize > 10_000_000 {
+            if payloadSize > MirrorStreamReceiver.maxVideoPayloadSize {
                 logger.error("Unreasonable payload size: \(payloadSize) - header parsing may be wrong. Dumping first 64 bytes:")
                 let dump = buffer.prefix(64).map { String(format: "%02x", $0) }.joined(separator: " ")
                 logger.error("\(dump)")

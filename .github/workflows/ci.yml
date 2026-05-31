@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app
+
+      - name: Show versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Resolve packages
+        run: xcodebuild -resolvePackageDependencies -project VirtualMirror.xcodeproj -scheme VirtualMirror
+
+      - name: Build & test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project VirtualMirror.xcodeproj \
+            -scheme VirtualMirror \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify || xcodebuild test \
+              -project VirtualMirror.xcodeproj \
+              -scheme VirtualMirror \
+              -destination 'platform=macOS' \
+              CODE_SIGNING_ALLOWED=NO
+
+  lint:
+    name: SwiftLint
+    runs-on: macos-15
+    # Non-blocking while the team tunes the ruleset on a previously-unlinted
+    # codebase. Flip to a required check (and add --strict) once it's green.
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Run SwiftLint
+        run: swiftlint lint --reporter github-actions-logging

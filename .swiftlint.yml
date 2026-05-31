@@ -1,0 +1,56 @@
+# SwiftLint configuration for VirtualMirror.
+#
+# Intentionally conservative: this is the first lint pass over an existing
+# codebase, so the noisier opinionated rules are disabled and thresholds are
+# relaxed. Tighten over time, then make the CI lint job a required check.
+
+included:
+  - VirtualMirror
+  - VirtualMirrorTests
+
+excluded:
+  - build
+  - DerivedData
+  - .build
+  - VirtualMirror/FairPlay   # reverse-engineered C + key tables; not Swift, but keep it out
+  - scripts
+
+disabled_rules:
+  - todo                      # TODO/FIXME markers are tracked elsewhere
+  - trailing_comma
+  - opening_brace
+  - line_length               # long protocol comments / hex tables are intentional
+
+opt_in_rules:
+  - empty_count
+  - force_unwrapping          # surface remaining force-unwraps (warning only)
+  - weak_delegate
+
+# Keep size rules generous for now; the large protocol handlers are known and
+# tracked for refactor separately.
+type_body_length:
+  warning: 600
+  error: 1200
+
+file_length:
+  warning: 700
+  error: 1500
+  ignore_comment_only_lines: true
+
+function_body_length:
+  warning: 120
+  error: 250
+
+cyclomatic_complexity:
+  warning: 25
+  error: 40
+
+identifier_name:
+  min_length: 1               # iv, id, x, y are fine
+  max_length: 60
+  allowed_symbols: ["_"]
+
+force_unwrapping:
+  severity: warning
+
+reporter: "xcode"

@@ -3,6 +3,12 @@ import Network
 import os
 
 class AirPlayConnection {
+    /// AirPlay RTSP stream type identifiers (the `type` field in a SETUP stream dict).
+    private enum StreamType {
+        static let screenMirror = 110
+        static let audio = 96
+    }
+
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "AirPlayConnection")
     private let connection: NWConnection
     private weak var manager: AirPlayManager?
@@ -10,17 +16,20 @@ class AirPlayConnection {
 
     private var buffer = Data()
 
+    /// This connection's receiver identity (ports, device ID, signing key).
+    private let identity: ReceiverIdentity
+
     // Handlers
-    private let pairSetupHandler = PairSetupHandler()
-    private let pairVerifyHandler = PairVerifyHandler()
+    private let pairSetupHandler: PairSetupHandler
+    private let pairVerifyHandler: PairVerifyHandler
     private let fairPlayHandler = FairPlayHandler()
 
-    // Mirror stream
+    // Mirror stream — ports are derived from this receiver's identity.
     private var mirrorStreamReceiver: MirrorStreamReceiver?
-    private let videoStreamPort = AirPlayConfig.videoStreamPort
-    private let timingPort = AirPlayConfig.ntpTimingPort
-    private let audioStreamPort = AirPlayConfig.audioStreamPort
-    private let audioControlPort = AirPlayConfig.audioControlPort
+    private var videoStreamPort: UInt16 { identity.ports.video }
+    private var timingPort: UInt16 { identity.ports.ntp }
+    private var audioStreamPort: UInt16 { identity.ports.audioData }
+    private var audioControlPort: UInt16 { identity.ports.audioControl }
 
     // Audio stream
     private var audioStreamReceiver: AudioStreamReceiver?
@@ -41,6 +50,10 @@ class AirPlayConnection {
     init(connection: NWConnection, manager: AirPlayManager?) {
         self.connection = connection
         self.manager = manager
+        let id = manager?.identity ?? ReceiverIdentity(slot: 0, name: AirPlayConfig.serverName)
+        self.identity = id
+        self.pairSetupHandler = PairSetupHandler(identity: id)
+        self.pairVerifyHandler = PairVerifyHandler(identity: id)
     }
 
     func start() {
@@ -213,14 +226,14 @@ class AirPlayConnection {
                let qualifier = plist["qualifier"] as? [String],
                let firstQualifier = qualifier.first {
                 logger.debug("GET /info with qualifier: \(firstQualifier)")
-                let body = AirPlayConfig.infoQualifierResponseData(qualifier: firstQualifier)
+                let body = AirPlayConfig.infoQualifierResponseData(identity, qualifier: firstQualifier)
                 sendResponse(HTTPResponse.okBplist(cseq: request.cseq, body: body))
                 return
             }
         }
 
         logger.debug("GET /info (full response)")
-        let body = AirPlayConfig.infoResponseData()
+        let body = AirPlayConfig.infoResponseData(identity)
         sendResponse(HTTPResponse.okBplist(cseq: request.cseq, body: body))
     }
 
@@ -236,12 +249,18 @@ class AirPlayConnection {
 
     private func handlePairVerify(_ request: HTTPRequest) {
         logger.debug("POST /pair-verify (\(request.body.count) bytes)")
-        let responseData = pairVerifyHandler.handle(requestBody: request.body)
-        sendResponse(HTTPResponse.ok(
-            cseq: request.cseq,
-            body: responseData,
-            contentType: "application/octet-stream"
-        ))
+        switch pairVerifyHandler.handle(requestBody: request.body) {
+        case .ok(let responseData):
+            sendResponse(HTTPResponse.ok(
+                cseq: request.cseq,
+                body: responseData,
+                contentType: "application/octet-stream"
+            ))
+        case .reject:
+            logger.error("pair-verify rejected — closing connection")
+            sendResponse(HTTPResponse.build(status: 470, statusText: "Connection Authorization Required", cseq: request.cseq))
+            close()
+        }
     }
 
     private func handleFPSetup(_ request: HTTPRequest) {
@@ -363,7 +382,7 @@ class AirPlayConnection {
         for stream in streams {
             let type = stream["type"] as? Int ?? -1
 
-            if type == 110 {
+            if type == StreamType.screenMirror {
                 // Screen mirroring stream — extract streamConnectionID for key derivation
                 var streamConnectionID: UInt64 = 0
                 if let connID = stream["streamConnectionID"] as? UInt64 {
@@ -375,14 +394,14 @@ class AirPlayConnection {
                 }
                 startMirrorStream(streamConnectionID: streamConnectionID)
                 responseStreams.append([
-                    "type": 110,
+                    "type": StreamType.screenMirror,
                     "dataPort": Int(videoStreamPort),
                 ] as [String: Any])
-            } else if type == 96 {
+            } else if type == StreamType.audio {
                 // Audio stream
                 startAudioStream(streamInfo: stream)
                 responseStreams.append([
-                    "type": 96,
+                    "type": StreamType.audio,
                     "dataPort": Int(audioStreamPort),
                     "controlPort": Int(audioControlPort),
                 ] as [String: Any])
@@ -441,9 +460,9 @@ class AirPlayConnection {
                 for stream in streams {
                     let type = stream["type"] as? Int ?? -1
                     logger.debug("Tearing down stream type: \(type)")
-                    if type == 110 {
+                    if type == StreamType.screenMirror {
                         mirrorStreamReceiver?.resetStream()
-                    } else if type == 96 {
+                    } else if type == StreamType.audio {
                         audioStreamReceiver?.resetStream()
                     }
                 }
@@ -528,7 +547,11 @@ class AirPlayConnection {
     private func sendResponse(_ data: Data) {
         connection.send(content: data, completion: .contentProcessed { [weak self] error in
             if let error = error {
-                self?.logger.error("Send error: \(error)")
+                // A failed send means the control connection is broken; tear it
+                // down so resources are reclaimed and the manager sees the drop,
+                // rather than leaving a half-dead connection waiting for input.
+                self?.logger.error("Send error: \(error) — closing connection")
+                self?.close()
             }
         })
     }

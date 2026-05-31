@@ -36,11 +36,20 @@
 		A1000028 /* AudioDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000035; };
 		A1000029 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000036; };
 		A1000030 /* StreamKeyDerivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000037; };
+		A1000031 /* GitHubFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000038; };
+		A1000032 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000039; };
+		A1000033 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000040; };
+		A1000034 /* ConnectivityFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000041; };
+		A1000035 /* CommandPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000042; };
+		A1000036 /* ReceiverIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000043; };
+		A1000037 /* ReceiverRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000044; };
 		SP000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SP000002; };
 		T1000001 /* HTTPParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000001; };
 		T1000002 /* AirPlayStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000002; };
 		T1000003 /* StreamKeyDerivationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000003; };
 		T1000004 /* HTTPResponseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000004; };
+		T1000005 /* HTTPParserHardeningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000005; };
+		T1000006 /* PairVerifyHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000006; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -80,10 +89,19 @@
 		B1000035 /* AudioDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDecoder.swift; sourceTree = "<group>"; };
 		B1000036 /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		B1000037 /* StreamKeyDerivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamKeyDerivation.swift; sourceTree = "<group>"; };
+		B1000038 /* GitHubFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubFeedback.swift; sourceTree = "<group>"; };
+		B1000039 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
+		B1000040 /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
+		B1000041 /* ConnectivityFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivityFooter.swift; sourceTree = "<group>"; };
+		B1000042 /* CommandPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPalette.swift; sourceTree = "<group>"; };
+		B1000043 /* ReceiverIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiverIdentity.swift; sourceTree = "<group>"; };
+		B1000044 /* ReceiverRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiverRegistry.swift; sourceTree = "<group>"; };
 		T2000001 /* HTTPParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPParserTests.swift; sourceTree = "<group>"; };
 		T2000002 /* AirPlayStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPlayStateTests.swift; sourceTree = "<group>"; };
 		T2000003 /* StreamKeyDerivationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamKeyDerivationTests.swift; sourceTree = "<group>"; };
 		T2000004 /* HTTPResponseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPResponseTests.swift; sourceTree = "<group>"; };
+		T2000005 /* HTTPParserHardeningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPParserHardeningTests.swift; sourceTree = "<group>"; };
+		T2000006 /* PairVerifyHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairVerifyHandlerTests.swift; sourceTree = "<group>"; };
 		T3000001 /* VirtualMirrorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VirtualMirrorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -129,6 +147,8 @@
 				T1000002 /* AirPlayStateTests.swift in Sources */,
 				T1000003 /* StreamKeyDerivationTests.swift in Sources */,
 				T1000004 /* HTTPResponseTests.swift in Sources */,
+				T1000005 /* HTTPParserHardeningTests.swift in Sources */,
+				T1000006 /* PairVerifyHandlerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -160,8 +180,21 @@
 				D1000006 /* Video */,
 				D1000007 /* Networking */,
 				D1000008 /* Audio */,
+				D1000012 /* Support */,
 			);
 			path = VirtualMirror;
+			sourceTree = "<group>";
+		};
+		D1000012 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				B1000038 /* GitHubFeedback.swift */,
+				B1000039 /* FeedbackView.swift */,
+				B1000040 /* HelpView.swift */,
+				B1000041 /* ConnectivityFooter.swift */,
+				B1000042 /* CommandPalette.swift */,
+			);
+			path = Support;
 			sourceTree = "<group>";
 		};
 		D1000003 /* AirPlay */ = {
@@ -172,6 +205,8 @@
 				B1000006 /* AirPlayServer.swift */,
 				B1000007 /* AirPlayConnection.swift */,
 				B1000024 /* NTPTimingServer.swift */,
+				B1000043 /* ReceiverIdentity.swift */,
+				B1000044 /* ReceiverRegistry.swift */,
 			);
 			path = AirPlay;
 			sourceTree = "<group>";
@@ -250,6 +285,8 @@
 				T2000002 /* AirPlayStateTests.swift */,
 				T2000003 /* StreamKeyDerivationTests.swift */,
 				T2000004 /* HTTPResponseTests.swift */,
+				T2000005 /* HTTPParserHardeningTests.swift */,
+				T2000006 /* PairVerifyHandlerTests.swift */,
 			);
 			path = VirtualMirrorTests;
 			sourceTree = "<group>";
@@ -370,6 +407,13 @@
 				A1000028 /* AudioDecoder.swift in Sources */,
 				A1000029 /* AudioPlayer.swift in Sources */,
 				A1000030 /* StreamKeyDerivation.swift in Sources */,
+				A1000031 /* GitHubFeedback.swift in Sources */,
+				A1000032 /* FeedbackView.swift in Sources */,
+				A1000033 /* HelpView.swift in Sources */,
+				A1000034 /* ConnectivityFooter.swift in Sources */,
+				A1000035 /* CommandPalette.swift in Sources */,
+				A1000036 /* ReceiverIdentity.swift in Sources */,
+				A1000037 /* ReceiverRegistry.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
