@@ -17,11 +17,37 @@ struct VirtualMirrorApp: App {
         }
         .windowStyle(.titleBar)
         .defaultSize(width: 400, height: 720)
+        .commands {
+            // Route the standard app-menu "About" to our rich custom panel so
+            // there's a single About experience (not the default SwiftUI one).
+            CommandGroup(replacing: .appInfo) {
+                Button("About VirtualMirror") {
+                    AboutWindowController.shared.showWindow()
+                }
+            }
+            CommandGroup(after: .appInfo) {
+                Button("Command Palette…") {
+                    CommandPaletteController.shared.toggle()
+                }
+                .keyboardShortcut("k", modifiers: .command)
+            }
+            // Replace the default Help menu (with its search field) with ours.
+            CommandGroup(replacing: .help) {
+                Button("VirtualMirror Help") {
+                    HelpWindowController.shared.showWindow()
+                }
+                .keyboardShortcut("?", modifiers: .command)
+                Button("Send Feedback…") {
+                    FeedbackWindowController.shared.showWindow()
+                }
+            }
+        }
     }
 }
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
+    static weak var shared: AppDelegate?
     private var statusItem: NSStatusItem!
     private var statusMenuItem: NSMenuItem!
     private var showHideMenuItem: NSMenuItem!
@@ -32,13 +58,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         didSet { observeState() }
     }
 
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // Windows are fine, tabs are not. This must run BEFORE the WindowGroup
+        // creates its window — otherwise the tab bar is already baked in and a
+        // later `tabbingMode = .disallowed` won't remove it.
+        NSWindow.allowsAutomaticWindowTabbing = false
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        AppDelegate.shared = self
+
         setupStatusItem()
 
-        // Intercept window close to hide instead of quit
+        // Intercept window close to hide instead of quit, and disallow tabbing
+        // on the actual window (the global flag above doesn't retroactively
+        // remove a tab bar from an already-created window).
         DispatchQueue.main.async {
             for window in NSApp.windows where window.contentView != nil {
                 window.delegate = self
+                window.tabbingMode = .disallowed
             }
         }
     }
@@ -74,6 +112,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         showHideMenuItem = NSMenuItem(title: "Show Window", action: #selector(toggleWindow), keyEquivalent: "")
         showHideMenuItem.target = self
         menu.addItem(showHideMenuItem)
+
+        let paletteItem = NSMenuItem(title: "Command Palette…", action: #selector(showCommandPalette), keyEquivalent: "k")
+        paletteItem.target = self
+        menu.addItem(paletteItem)
 
         menu.addItem(.separator())
 
@@ -162,6 +204,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func showHelp() {
         HelpWindowController.shared.showWindow()
     }
+
+    @objc private func showCommandPalette() {
+        CommandPaletteController.shared.toggle()
+    }
+
+    // Public hooks used by the command palette.
+    func commandToggleWindow() { toggleWindow() }
+    func commandCheckForUpdates() { updaterController.checkForUpdates(nil) }
 
     @objc private func showFeedback() {
         FeedbackWindowController.shared.showWindow()

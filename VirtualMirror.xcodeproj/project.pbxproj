@@ -39,6 +39,8 @@
 		A1000031 /* GitHubFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000038; };
 		A1000032 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000039; };
 		A1000033 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000040; };
+		A1000034 /* ConnectivityFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000041; };
+		A1000035 /* CommandPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000042; };
 		SP000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SP000002; };
 		T1000001 /* HTTPParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000001; };
 		T1000002 /* AirPlayStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2000002; };
@@ -88,6 +90,8 @@
 		B1000038 /* GitHubFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubFeedback.swift; sourceTree = "<group>"; };
 		B1000039 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
 		B1000040 /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
+		B1000041 /* ConnectivityFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivityFooter.swift; sourceTree = "<group>"; };
+		B1000042 /* CommandPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPalette.swift; sourceTree = "<group>"; };
 		T2000001 /* HTTPParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPParserTests.swift; sourceTree = "<group>"; };
 		T2000002 /* AirPlayStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPlayStateTests.swift; sourceTree = "<group>"; };
 		T2000003 /* StreamKeyDerivationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamKeyDerivationTests.swift; sourceTree = "<group>"; };
@@ -183,6 +187,8 @@
 				B1000038 /* GitHubFeedback.swift */,
 				B1000039 /* FeedbackView.swift */,
 				B1000040 /* HelpView.swift */,
+				B1000041 /* ConnectivityFooter.swift */,
+				B1000042 /* CommandPalette.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -398,6 +404,8 @@
 				A1000031 /* GitHubFeedback.swift in Sources */,
 				A1000032 /* FeedbackView.swift in Sources */,
 				A1000033 /* HelpView.swift in Sources */,
+				A1000034 /* ConnectivityFooter.swift in Sources */,
+				A1000035 /* CommandPalette.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

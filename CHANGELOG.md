@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- In-app **Help** (menu bar → VirtualMirror Help): a self-contained guide covering mirroring, audio, troubleshooting, updates, and privacy
+- **Command Palette (⌘K)**: a searchable, keyboard-driven list of every action (show/hide window, mute, restart AirPlay, check for updates, Help, Feedback, Ko-fi, quit) in a floating panel
+- **Connectivity footer** on the main window: live status, connected device, and — while mirroring — resolution, frame rate, session time, and a mute indicator, plus a quiet Ko-fi link
+- In-app **Help** (menu bar → VirtualMirror Help): a self-contained guide covering mirroring, audio, the command palette & shortcuts, troubleshooting, updates, and privacy
 - **Send Feedback…** (menu bar and About): composes a pre-filled GitHub issue (bug / feature / question) and opens it in the browser, with a "Copy report" fallback and an optional, non-identifying diagnostics line (app/macOS version + CPU arch only)
 - **Ko-fi support** link in the About window and Help, and a Ko-fi badge in the README
 - `AirPlayConfig.requireClientSignature` flag: when enabled, pair-verify stage 2 rejects clients whose Ed25519 signature fails to validate (closing the connection with `470`) instead of proceeding regardless
@@ -24,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The standard app-menu **About VirtualMirror** now opens the app's own About panel (with Ko-fi / feedback links) instead of the default system one — a single, consistent About
+- Disabled automatic window tabbing (no "Show Tab Bar" / tab UI on the mirroring window)
 - Replaced magic numbers with named constants: `AirPlayConnection.StreamType` (screen-mirror `110` / audio `96`) and `MirrorStreamReceiver.maxVideoPayloadSize`
 - Documented why `AirPlayManager.videoDecoder` is intentionally `nonisolated` (fed from the off-main decode thread)
 

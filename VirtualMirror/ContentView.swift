@@ -6,51 +6,60 @@ struct ContentView: View {
     @State private var showKeychainExplanation = false
 
     var body: some View {
-        ZStack {
-            Color.black
-                .ignoresSafeArea()
+        VStack(spacing: 0) {
+            ZStack {
+                Color.black
+                    .ignoresSafeArea()
 
-            if showKeychainExplanation {
-                KeychainExplanationView {
-                    withAnimation(.easeInOut(duration: 0.4)) {
-                        showKeychainExplanation = false
-                        hasCompletedFirstLaunch = true
-                    }
-                    airPlayManager.start()
-                }
-            } else {
-                switch airPlayManager.state {
-                case .idle:
-                    IdleView()
-
-                case .connecting(let deviceName):
-                    VStack(spacing: 16) {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                            .tint(.white)
-                        Text("Connecting to \(deviceName)...")
-                            .font(.title3)
-                            .foregroundColor(.white)
-                    }
-
-                case .mirroring(_):
-                    MirroringView(airPlayManager: airPlayManager)
-
-                case .error(let message):
-                    VStack(spacing: 16) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 48))
-                            .foregroundColor(.yellow)
-                        Text(message)
-                            .font(.body)
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
-                        Button("Retry") {
-                            airPlayManager.restart()
+                if showKeychainExplanation {
+                    KeychainExplanationView {
+                        withAnimation(.easeInOut(duration: 0.4)) {
+                            showKeychainExplanation = false
+                            hasCompletedFirstLaunch = true
                         }
-                        .buttonStyle(.bordered)
+                        airPlayManager.start()
+                    }
+                } else {
+                    switch airPlayManager.state {
+                    case .idle:
+                        IdleView()
+
+                    case .connecting(let deviceName):
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(.white)
+                            Text("Connecting to \(deviceName)...")
+                                .font(.title3)
+                                .foregroundColor(.white)
+                        }
+
+                    case .mirroring(_):
+                        MirroringView(airPlayManager: airPlayManager)
+
+                    case .error(let message):
+                        VStack(spacing: 16) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 48))
+                                .foregroundColor(.yellow)
+                            Text(message)
+                                .font(.body)
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                            Button("Retry") {
+                                airPlayManager.restart()
+                            }
+                            .buttonStyle(.bordered)
+                        }
                     }
                 }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // Connectivity footer (hidden during the first-launch explainer)
+            if !showKeychainExplanation {
+                Divider()
+                ConnectivityFooter(airPlayManager: airPlayManager)
             }
         }
         .frame(minWidth: 300, minHeight: 400)

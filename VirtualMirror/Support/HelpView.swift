@@ -34,7 +34,7 @@ struct HelpView: View {
 // MARK: - Topics
 
 enum HelpTopic: String, CaseIterable, Identifiable {
-    case welcome, mirroring, audio, troubleshooting, updates, privacy, support
+    case welcome, mirroring, audio, shortcuts, troubleshooting, updates, privacy, support
     var id: String { rawValue }
 
     var title: String {
@@ -42,6 +42,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
         case .welcome:         return "Welcome"
         case .mirroring:       return "Start Mirroring"
         case .audio:           return "Audio & Volume"
+        case .shortcuts:       return "Command Palette & Shortcuts"
         case .troubleshooting: return "Troubleshooting"
         case .updates:         return "Updates"
         case .privacy:         return "Privacy & Security"
@@ -54,6 +55,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
         case .welcome:         return "sparkles"
         case .mirroring:       return "iphone.gen3"
         case .audio:           return "speaker.wave.2.fill"
+        case .shortcuts:       return "command"
         case .troubleshooting: return "wrench.and.screwdriver"
         case .updates:         return "arrow.triangle.2.circlepath"
         case .privacy:         return "lock.shield"
@@ -66,6 +68,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
         case .welcome:         HelpWelcome()
         case .mirroring:       HelpMirroring()
         case .audio:           HelpAudio()
+        case .shortcuts:       HelpShortcuts()
         case .troubleshooting: HelpTroubleshooting()
         case .updates:         HelpUpdates()
         case .privacy:         HelpPrivacy()
@@ -142,6 +145,32 @@ private func Para(_ text: String) -> some View {
         .fixedSize(horizontal: false, vertical: true)
 }
 
+/// A keyboard-shortcut row: keys as chips, then what it does.
+private struct ShortcutRow: View {
+    let keys: [String]
+    let label: String
+    var body: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 4) {
+                ForEach(keys, id: \.self) { k in
+                    Text(k)
+                        .font(.system(.callout, design: .rounded).weight(.semibold))
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(Color(nsColor: .controlBackgroundColor))
+                                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .strokeBorder(.separator))
+                        )
+                }
+            }
+            .frame(width: 96, alignment: .leading)
+            Text(label).font(.callout).foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+        }
+    }
+}
+
 // MARK: - Topic content
 
 private struct HelpWelcome: View {
@@ -159,6 +188,8 @@ private struct HelpWelcome: View {
                           body_: "Full audio passthrough with a volume slider — not just the picture.")
                 HelpPoint(icon: "menubar.arrow.up.rectangle", lead: "Lives in the menu bar",
                           body_: "Closing the window hides the app; it keeps receiving from the menu bar until you quit.")
+                HelpPoint(icon: "command", lead: "Command Palette (⌘K)",
+                          body_: "Press ⌘K anywhere for a searchable list of every action. A live status footer shows resolution, frame rate, and session time while mirroring.")
             }
             Text("Pick a topic on the left to dig in.")
                 .font(.callout).foregroundStyle(.tertiary).padding(.top, 4)
@@ -197,6 +228,27 @@ private struct HelpAudio: View {
                           body_: "Hover over the mirroring window to reveal the volume slider.")
                 HelpPoint(icon: "speaker.slash.fill", lead: "Mute",
                           body_: "Click the speaker icon next to the slider to mute or unmute.")
+            }
+        }
+    }
+}
+
+private struct HelpShortcuts: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            HelpHeader(icon: "command", title: "Command Palette & Shortcuts",
+                       subtitle: "Everything VirtualMirror does, one keystroke away.")
+            VStack(alignment: .leading, spacing: 14) {
+                HelpPoint(icon: "command", lead: "Command Palette (⌘K)",
+                          body_: "Press ⌘K for a searchable list of every action — show/hide the window, mute, restart AirPlay, check for updates, open Help or Feedback, and quit. Type to filter, ↑/↓ to move, ↩ to run, ⎋ to close.")
+                HelpPoint(icon: "rectangle.bottomthird.inset.filled", lead: "Connectivity footer",
+                          body_: "The strip along the bottom of the window shows live status: the connected device, and while mirroring the resolution, frame rate, session time, and a mute indicator.")
+            }
+            VStack(alignment: .leading, spacing: 10) {
+                ShortcutRow(keys: ["⌘", "K"], label: "Open the Command Palette")
+                ShortcutRow(keys: ["⌘", "?"], label: "Open VirtualMirror Help")
+                ShortcutRow(keys: ["⌘", "W"], label: "Hide the window (keeps running in the menu bar)")
+                ShortcutRow(keys: ["⌘", "Q"], label: "Quit VirtualMirror")
             }
         }
     }
