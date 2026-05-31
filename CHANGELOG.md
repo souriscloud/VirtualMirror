@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-31
+
 ### Added
 
 - **Multiple receivers, one per window**: each window is now an independent AirPlay receiver with its own name, port slot, and pairing identity, so several iPhones/iPads can mirror side by side and each appears separately in the Screen Mirroring list. New Receiver (⌘N) opens another; the menu bar lists all live receivers; the app stays resident in the menu bar with no windows open
@@ -119,7 +121,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated release pipeline (archive, sign, notarize, DMG, GitHub Release)
 - Branded DMG installer with background artwork
 
-[Unreleased]: https://github.com/souriscloud/VirtualMirror/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/souriscloud/VirtualMirror/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/souriscloud/VirtualMirror/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/souriscloud/VirtualMirror/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/souriscloud/VirtualMirror/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/souriscloud/VirtualMirror/compare/v0.2.0...v0.3.0
