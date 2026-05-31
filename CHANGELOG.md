@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Command Palette (⌘K)**: a searchable, keyboard-driven list of every action (show/hide window, mute, restart AirPlay, check for updates, Help, Feedback, Ko-fi, quit) in a floating panel
+- **Multiple receivers, one per window**: each window is now an independent AirPlay receiver with its own name, port slot, and pairing identity, so several iPhones/iPads can mirror side by side and each appears separately in the Screen Mirroring list. New Receiver (⌘N) opens another; the menu bar lists all live receivers; the app stays resident in the menu bar with no windows open
+- **Rename a receiver** (command palette → Rename This Receiver…): updates the window title and re-advertises over Bonjour live, without dropping an active session
+- **Command Palette (⌘K)**: a searchable, keyboard-driven list of every action (new receiver, rename/close/restart this receiver, mute, check for updates, Help, Feedback, Ko-fi, quit) in a floating panel
 - **Connectivity footer** on the main window: live status, connected device, and — while mirroring — resolution, frame rate, session time, and a mute indicator, plus a quiet Ko-fi link
 - In-app **Help** (menu bar → VirtualMirror Help): a self-contained guide covering mirroring, audio, the command palette & shortcuts, troubleshooting, updates, and privacy
 - **Send Feedback…** (menu bar and About): composes a pre-filled GitHub issue (bug / feature / question) and opens it in the browser, with a "Copy report" fallback and an optional, non-identifying diagnostics line (app/macOS version + CPU arch only)
@@ -26,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Pairing identity is now **ephemeral and per-receiver** (a fresh device ID and Ed25519 key generated in memory per window) instead of one long-term key in the Keychain — no Keychain prompt, clean slate each launch
+- Closing a receiver window now closes that receiver; the app stays resident in the menu bar (closing the last window no longer hides a single shared window)
 - The standard app-menu **About VirtualMirror** now opens the app's own About panel (with Ko-fi / feedback links) instead of the default system one — a single, consistent About
 - Disabled automatic window tabbing (no "Show Tab Bar" / tab UI on the mirroring window)
 - Replaced magic numbers with named constants: `AirPlayConnection.StreamType` (screen-mirror `110` / audio `96`) and `MirrorStreamReceiver.maxVideoPayloadSize`

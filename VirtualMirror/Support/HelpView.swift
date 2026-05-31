@@ -186,8 +186,10 @@ private struct HelpWelcome: View {
                           body_: "Hardware-accelerated H.264 decoding via VideoToolbox keeps the picture smooth and responsive.")
                 HelpPoint(icon: "speaker.wave.2.fill", lead: "Audio included",
                           body_: "Full audio passthrough with a volume slider — not just the picture.")
+                HelpPoint(icon: "rectangle.stack", lead: "Multiple receivers at once",
+                          body_: "Each window is its own AirPlay receiver with its own name. Open more with New Receiver (⌘N) to mirror several devices side by side — each appears separately in the iPhone's list.")
                 HelpPoint(icon: "menubar.arrow.up.rectangle", lead: "Lives in the menu bar",
-                          body_: "Closing the window hides the app; it keeps receiving from the menu bar until you quit.")
+                          body_: "The app keeps running in the menu bar even with no windows open; reopen a receiver any time with ⌘N.")
                 HelpPoint(icon: "command", lead: "Command Palette (⌘K)",
                           body_: "Press ⌘K anywhere for a searchable list of every action. A live status footer shows resolution, frame rate, and session time while mirroring.")
             }
@@ -240,14 +242,15 @@ private struct HelpShortcuts: View {
                        subtitle: "Everything VirtualMirror does, one keystroke away.")
             VStack(alignment: .leading, spacing: 14) {
                 HelpPoint(icon: "command", lead: "Command Palette (⌘K)",
-                          body_: "Press ⌘K for a searchable list of every action — show/hide the window, mute, restart AirPlay, check for updates, open Help or Feedback, and quit. Type to filter, ↑/↓ to move, ↩ to run, ⎋ to close.")
+                          body_: "Press ⌘K for a searchable list of every action — new receiver, rename or close this receiver, mute, restart, check for updates, open Help or Feedback, and quit. Type to filter, ↑/↓ to move, ↩ to run, ⎋ to close.")
                 HelpPoint(icon: "rectangle.bottomthird.inset.filled", lead: "Connectivity footer",
-                          body_: "The strip along the bottom of the window shows live status: the connected device, and while mirroring the resolution, frame rate, session time, and a mute indicator.")
+                          body_: "The strip along the bottom of each window shows live status: the connected device, and while mirroring the resolution, frame rate, session time, and a mute indicator.")
             }
             VStack(alignment: .leading, spacing: 10) {
                 ShortcutRow(keys: ["⌘", "K"], label: "Open the Command Palette")
+                ShortcutRow(keys: ["⌘", "N"], label: "New Receiver (another window)")
                 ShortcutRow(keys: ["⌘", "?"], label: "Open VirtualMirror Help")
-                ShortcutRow(keys: ["⌘", "W"], label: "Hide the window (keeps running in the menu bar)")
+                ShortcutRow(keys: ["⌘", "W"], label: "Close this receiver")
                 ShortcutRow(keys: ["⌘", "Q"], label: "Quit VirtualMirror")
             }
         }
@@ -265,8 +268,8 @@ private struct HelpTroubleshooting: View {
                           body_: "Confirm both devices are on the same Wi-Fi network. Restart VirtualMirror (Quit from the menu bar, then relaunch).")
                 HelpPoint(icon: "lock.shield", lead: "Blocked by a firewall",
                           body_: "VirtualMirror listens on port 47000. If you run a firewall, allow incoming connections to it.")
-                HelpPoint(icon: "key.fill", lead: "Keychain prompt on first launch",
-                          body_: "VirtualMirror stores a cryptographic identity key in the macOS Keychain for AirPlay pairing. The one-time prompt on first launch is expected.")
+                HelpPoint(icon: "dot.radiowaves.left.and.right", lead: "Local network permission",
+                          body_: "The first time, macOS may ask VirtualMirror for permission to find devices on your local network — allow it so AirPlay discovery works.")
             }
         }
     }
@@ -294,8 +297,8 @@ private struct HelpPrivacy: View {
             HelpHeader(icon: "lock.shield", title: "Privacy & Security")
             Para("VirtualMirror is a local AirPlay receiver. The video and audio stream goes straight from your device to this Mac over your network — there's no cloud, no account, and no telemetry.")
             VStack(alignment: .leading, spacing: 14) {
-                HelpPoint(icon: "key.fill", lead: "Identity in the Keychain",
-                          body_: "The cryptographic key that identifies this receiver to your devices is stored in the macOS Keychain.")
+                HelpPoint(icon: "person.badge.shield.checkmark", lead: "Fresh identity per receiver",
+                          body_: "Each receiver generates its own pairing identity on the spot — nothing is persisted, so it's a clean slate every launch.")
                 HelpPoint(icon: "lock.fill", lead: "Encrypted pairing",
                           body_: "Connections use the standard AirPlay pairing and FairPlay handshake; the mirror stream is decrypted only on this Mac.")
                 HelpPoint(icon: "checkmark.shield", lead: "Diagnostics stay minimal",

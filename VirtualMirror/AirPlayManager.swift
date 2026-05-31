@@ -116,6 +116,18 @@ class AirPlayManager: ObservableObject {
         start()
     }
 
+    /// Renames this receiver live. Updates the window title and re-advertises
+    /// over Bonjour so iPhones see the new name; any active mirroring session
+    /// (on the TCP listener) is unaffected.
+    func rename(to newName: String) {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != identity.name else { return }
+        logger.info("Renaming receiver \"\(self.identity.name)\" → \"\(trimmed)\"")
+        identity.name = trimmed
+        displayName = trimmed
+        airPlayService?.updateName(identity: identity)
+    }
+
     func stop() {
         logger.info("Stopping AirPlay services")
         stopStatsPolling()

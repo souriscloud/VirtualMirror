@@ -98,7 +98,7 @@ struct KeychainExplanationView: View {
                     .frame(width: 160, height: 160)
                     .opacity(appeared ? 1 : 0)
 
-                Image(systemName: "key.fill")
+                Image(systemName: "lock.shield.fill")
                     .font(.system(size: 52, weight: .light))
                     .foregroundStyle(
                         LinearGradient(
@@ -113,7 +113,7 @@ struct KeychainExplanationView: View {
 
             Spacer().frame(height: 28)
 
-            Text("Secure Identity")
+            Text("Local & Private")
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundColor(.white)
                 .opacity(appeared ? 1 : 0)
@@ -121,7 +121,7 @@ struct KeychainExplanationView: View {
 
             Spacer().frame(height: 12)
 
-            Text("VirtualMirror generates a unique cryptographic key to identify itself to your Apple devices during AirPlay pairing.")
+            Text("VirtualMirror turns this Mac into an AirPlay receiver. Your iPhone or iPad streams straight here over your local network.")
                 .font(.system(size: 13))
                 .foregroundColor(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
@@ -132,7 +132,7 @@ struct KeychainExplanationView: View {
 
             Spacer().frame(height: 10)
 
-            Text("This key is stored securely in your macOS Keychain. You may see a system prompt asking for permission — this is normal and only happens once.")
+            Text("Nothing leaves your Mac — no account, no cloud, no telemetry. Each receiver uses a fresh pairing identity, generated on the spot.")
                 .font(.system(size: 12))
                 .foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)

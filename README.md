@@ -42,13 +42,18 @@ Hover over the mirroring window to reveal the volume slider. Click the speaker i
 
 ### Menu Bar
 
-The menu bar icon shows live connection status. Click it for:
+The menu bar icon lists your live receivers and their status. Click it for:
 
-- **Show/Hide Window** — Toggle the main window
+- **New Receiver** (⌘N) — Open another receiver window (mirror multiple devices at once)
+- **Command Palette…** (⌘K) — Searchable, keyboard-driven access to every action
 - **Check for Updates…** — Manually check for a new version
-- **VirtualMirror Help** — Built-in guide: mirroring, audio, troubleshooting, privacy
+- **VirtualMirror Help** — Built-in guide: mirroring, audio, command palette, troubleshooting, privacy
 - **Send Feedback…** — Report a bug or request a feature (opens a pre-filled GitHub issue)
 - **About VirtualMirror…** — Version info, credits, and support links
+
+### Multiple receivers
+
+Each window is its own AirPlay receiver with its own name. Open more with **New Receiver** (⌘N) to mirror several iPhones or iPads side by side — each shows up separately in the device's Screen Mirroring list. Rename a receiver from the **Command Palette** (⌘K → *Rename This Receiver…*).
 
 ## Troubleshooting
 
@@ -66,9 +71,9 @@ If the macOS built-in **AirPlay Receiver** is enabled, your iPhone may connect t
 - Restart VirtualMirror from the menu bar (Quit, then relaunch)
 - Check that no firewall is blocking port **47000**
 
-### Keychain prompt on first launch
+### Local network permission
 
-VirtualMirror stores a cryptographic identity key in the macOS Keychain for AirPlay pairing. The system may prompt for your password once — this is expected and only happens on first launch.
+The first time you run it, macOS may ask VirtualMirror for permission to find devices on your local network. Allow it — AirPlay discovery needs it. Each receiver generates a fresh pairing identity in memory; nothing is persisted.
 
 ## Building from Source
 

@@ -73,6 +73,14 @@ class AirPlayService {
         }
     }
 
+    /// Re-advertises under a new name (used by live rename). The TCP listener
+    /// and any active mirroring session are untouched — only the Bonjour record
+    /// the iPhone browses changes.
+    func updateName(identity: ReceiverIdentity) {
+        stopAdvertising()
+        startAdvertising(identity: identity)
+    }
+
     func stopAdvertising() {
         logger.info("Stopping Bonjour advertisement")
         airplaySource?.cancel()

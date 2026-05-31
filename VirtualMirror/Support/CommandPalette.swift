@@ -235,6 +235,14 @@ private struct CommandRow: View {
 
 // MARK: - Controller (floating NSPanel + keyboard navigation)
 
+/// A floating panel that can become key (so its SwiftUI text field can take
+/// keyboard focus). A plain `.nonactivatingPanel` won't reliably become key,
+/// which is why ⌘K opened the palette without focusing the search field.
+final class KeyablePanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
+
 @MainActor
 final class CommandPaletteController {
     static let shared = CommandPaletteController()
@@ -262,10 +270,26 @@ final class CommandPaletteController {
         panel.contentViewController = host
         panel.setContentSize(NSSize(width: 640, height: 430))
         centerOverKeyWindow(panel)
-        panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        panel.makeKeyAndOrderFront(nil)
         self.panel = panel
         installMonitors()
+
+        // Move keyboard focus into the search field once the panel is key and
+        // SwiftUI has laid out — @FocusState alone doesn't take in a panel.
+        DispatchQueue.main.async { [weak self] in
+            guard let panel = self?.panel, let field = self?.firstTextField(in: panel.contentView) else { return }
+            panel.makeFirstResponder(field)
+        }
+    }
+
+    private func firstTextField(in view: NSView?) -> NSView? {
+        guard let view else { return nil }
+        if view is NSTextField { return view }
+        for sub in view.subviews {
+            if let found = firstTextField(in: sub) { return found }
+        }
+        return nil
     }
 
     func dismiss() {
@@ -280,11 +304,12 @@ final class CommandPaletteController {
     }
 
     private func makePanel() -> NSPanel {
-        let panel = NSPanel(
+        let panel = KeyablePanel(
             contentRect: NSRect(x: 0, y: 0, width: 640, height: 430),
             styleMask: [.titled, .fullSizeContentView, .nonactivatingPanel],
             backing: .buffered, defer: false
         )
+        panel.becomesKeyOnlyIfNeeded = false
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
         panel.isMovableByWindowBackground = true
@@ -351,6 +376,10 @@ enum CommandRegistry {
         }
 
         if let manager {
+            out.append(CommandItem(id: "rename", icon: "pencil", title: "Rename This Receiver…",
+                                   subtitle: "Currently “\(manager.displayName)”", tint: .blue) {
+                ReceiverRenamePrompt.show(for: manager)
+            })
             if case .mirroring = manager.state {
                 out.append(CommandItem(id: "mute", icon: manager.isMuted ? "speaker.wave.2.fill" : "speaker.slash.fill",
                                        title: manager.isMuted ? "Unmute Audio" : "Mute Audio",
@@ -393,5 +422,30 @@ enum CommandRegistry {
             NSApp.terminate(nil)
         })
         return out
+    }
+}
+
+// MARK: - Rename prompt
+
+/// Small modal prompt for renaming a receiver — the name iPhones see in the
+/// Screen Mirroring list (and the window title).
+@MainActor
+enum ReceiverRenamePrompt {
+    static func show(for manager: AirPlayManager) {
+        let alert = NSAlert()
+        alert.messageText = "Rename Receiver"
+        alert.informativeText = "This is the name iPhones see in the Screen Mirroring list."
+        alert.addButton(withTitle: "Rename")
+        alert.addButton(withTitle: "Cancel")
+
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 24))
+        field.stringValue = manager.displayName
+        field.placeholderString = "Receiver name"
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            manager.rename(to: field.stringValue)
+        }
     }
 }
