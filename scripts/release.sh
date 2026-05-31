@@ -292,6 +292,10 @@ hdiutil create -volname "$DMG_VOLUME_NAME" \
 # Mount and customize icon layout
 MOUNT_DIR=$(hdiutil attach -readwrite -noverify "$DMG_TEMP" | grep "/Volumes/" | sed 's/.*\(\/Volumes\/.*\)/\1/')
 
+# Give Finder a moment to register the freshly-mounted volume. Without this the
+# osascript layout step intermittently fails with "Can't get disk" (-1728).
+sleep 3
+
 if [[ "$HAS_BACKGROUND" == "true" ]]; then
     osascript <<APPLESCRIPT
 tell application "Finder"
