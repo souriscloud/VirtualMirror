@@ -53,135 +53,29 @@ struct AirPlayConfig {
         return UInt64(featuresHigh) << 32 | UInt64(featuresLow)
     }
 
-    // Generate a stable device ID (MAC-address format)
-    static var deviceID: String = {
-        let key = "VirtualMirrorDeviceID"
-        if let stored = UserDefaults.standard.string(forKey: key) {
-            return stored
-        }
-        var bytes = [UInt8](repeating: 0, count: 6)
-        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
-        bytes[0] = bytes[0] & 0xFE | 0x02 // locally administered, unicast
-        let id = bytes.map { String(format: "%02X", $0) }.joined(separator: ":")
-        UserDefaults.standard.set(id, forKey: key)
-        return id
-    }()
-
-    static var deviceIDBytes: [UInt8] {
-        return deviceID.split(separator: ":").compactMap { UInt8($0, radix: 16) }
-    }
-
-    // MARK: - Ed25519 long-term keypair (stored in Keychain)
-
-    private static let keychainService = "cloud.souris.virtualmirror"
-    private static let keychainAccount = "Ed25519PrivateKey"
-
-    static var ed25519PrivateKey: Curve25519.Signing.PrivateKey = {
-        // Try loading from Keychain first
-        if let data = loadFromKeychain(service: keychainService, account: keychainAccount),
-           let privKey = try? Curve25519.Signing.PrivateKey(rawRepresentation: data) {
-            return privKey
-        }
-
-        // Migrate from UserDefaults if present
-        let legacyKey = "VirtualMirrorEd25519Key"
-        if let data = UserDefaults.standard.data(forKey: legacyKey),
-           let privKey = try? Curve25519.Signing.PrivateKey(rawRepresentation: data) {
-            saveToKeychain(service: keychainService, account: keychainAccount, data: data)
-            UserDefaults.standard.removeObject(forKey: legacyKey)
-            return privKey
-        }
-
-        // Generate new key
-        let privKey = Curve25519.Signing.PrivateKey()
-        saveToKeychain(service: keychainService, account: keychainAccount, data: privKey.rawRepresentation)
-        return privKey
-    }()
-
-    static var ed25519PublicKey: Curve25519.Signing.PublicKey {
-        return ed25519PrivateKey.publicKey
-    }
-
-    static var publicKeyHex: String {
-        return ed25519PublicKey.rawRepresentation.map { String(format: "%02x", $0) }.joined()
-    }
-
-    // Pairing identifier
-    static var pairingID: String = {
-        let key = "VirtualMirrorPairingID"
-        if let stored = UserDefaults.standard.string(forKey: key) {
-            return stored
-        }
-        let id = UUID().uuidString
-        UserDefaults.standard.set(id, forKey: key)
-        return id
-    }()
-
-    // Stable display UUID (generated once, persisted)
-    static var displayUUID: String = {
-        let key = "VirtualMirrorDisplayUUID"
-        if let stored = UserDefaults.standard.string(forKey: key) {
-            return stored
-        }
-        let id = UUID().uuidString
-        UserDefaults.standard.set(id, forKey: key)
-        return id
-    }()
-
-    // MARK: - Keychain helpers
-
-    private static func saveToKeychain(service: String, account: String, data: Data) {
-        // Delete any existing item first
-        let deleteQuery: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        SecItemDelete(deleteQuery as CFDictionary)
-
-        let addQuery: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
-        ]
-        SecItemAdd(addQuery as CFDictionary, nil)
-    }
-
-    private static func loadFromKeychain(service: String, account: String) -> Data? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess else { return nil }
-        return result as? Data
-    }
+    // Identity (device ID, Ed25519 key, pairing ID, display UUID) and port
+    // allocation are per-receiver — see ReceiverIdentity. AirPlayConfig now
+    // holds only the protocol-level constants shared by every receiver.
 
     // MARK: - /info response as binary plist data
 
-    static func infoResponseData(forDisplay width: Int = 1920, height: Int = 1080) -> Data {
+    static func infoResponseData(_ identity: ReceiverIdentity, forDisplay width: Int = 1920, height: Int = 1080) -> Data {
         // Matches UxPlay raop_handler_info exactly:
         // - No "protovers" (only in TXT records, not /info response)
         // - keepAliveSendStatsAsBody is boolean (not integer)
         // - Stable display UUID (not regenerated each call)
         let info: [String: Any] = [
-            "deviceID": deviceID,
-            "macAddress": deviceID,
+            "deviceID": identity.deviceID,
+            "macAddress": identity.deviceID,
             "model": model,
-            "name": serverName,
+            "name": identity.name,
             "sourceVersion": sourceVersion,
             "features": NSNumber(value: featuresInt),
             "statusFlags": NSNumber(value: 68 as UInt64),
             "vv": NSNumber(value: 2 as UInt64),
             "initialVolume": NSNumber(value: -20.0),
-            "pi": pairingID,
-            "pk": ed25519PublicKey.rawRepresentation,
+            "pi": identity.pairingID,
+            "pk": identity.ed25519PublicKey.rawRepresentation,
             "keepAliveLowPower": NSNumber(value: 1 as UInt64),
             "keepAliveSendStatsAsBody": NSNumber(value: true),
             "displays": [
@@ -192,7 +86,7 @@ struct AirPlayConfig {
                     "heightPixels": NSNumber(value: UInt64(height)),
                     "widthPhysical": NSNumber(value: 0 as UInt64),
                     "heightPhysical": NSNumber(value: 0 as UInt64),
-                    "uuid": displayUUID,
+                    "uuid": identity.displayUUID,
                     "features": NSNumber(value: 14 as UInt64),
                     "rotation": NSNumber(value: false),
                     "overscanned": NSNumber(value: false),
@@ -240,12 +134,12 @@ struct AirPlayConfig {
     /// Handles a GET /info request that includes a qualifier plist body.
     /// Returns a plist containing only the requested TXT record data blob(s),
     /// matching UxPlay's behavior (the full /info fields are NOT included).
-    static func infoQualifierResponseData(qualifier: String) -> Data {
+    static func infoQualifierResponseData(_ identity: ReceiverIdentity, qualifier: String) -> Data {
         var response: [String: Any] = [:]
         if qualifier == "txtAirPlay" {
-            response["txtAirPlay"] = Data(airplayTXTRecord())
+            response["txtAirPlay"] = Data(airplayTXTRecord(identity))
         } else if qualifier == "txtRAOP" {
-            response["txtRAOP"] = Data(raopTXTRecord())
+            response["txtRAOP"] = Data(raopTXTRecord(identity))
         }
         do {
             return try PropertyListSerialization.data(fromPropertyList: response, format: .binary, options: 0)
@@ -271,15 +165,15 @@ struct AirPlayConfig {
     }
 
     /// AirPlay (_airplay._tcp) TXT record entries.
-    static func airplayTXTRecord() -> [UInt8] {
+    static func airplayTXTRecord(_ identity: ReceiverIdentity) -> [UInt8] {
         buildTXTData(from: [
-            ("deviceid", deviceID),
+            ("deviceid", identity.deviceID),
             ("features", featuresString),
             ("model", model),
             ("srcvers", sourceVersion),
             ("protovers", protoVersion),
-            ("pk", publicKeyHex),
-            ("pi", pairingID),
+            ("pk", identity.publicKeyHex),
+            ("pi", identity.pairingID),
             ("flags", "0x4"),
             ("vv", "2"),
             ("pw", "false"),
@@ -290,7 +184,7 @@ struct AirPlayConfig {
     }
 
     /// RAOP (_raop._tcp) TXT record entries.
-    static func raopTXTRecord() -> [UInt8] {
+    static func raopTXTRecord(_ identity: ReceiverIdentity) -> [UInt8] {
         buildTXTData(from: [
             ("txtvers", "1"),
             ("ch", "2"),
@@ -307,7 +201,7 @@ struct AirPlayConfig {
             ("am", model),
             ("sf", "0x4"),
             ("ft", featuresString),
-            ("pk", publicKeyHex),
+            ("pk", identity.publicKeyHex),
             ("vv", "2"),
             ("rhd", "5.6.0.0"),
             ("sv", "false"),

@@ -45,6 +45,20 @@ class AirPlayManager: ObservableObject {
     private var airPlayService: AirPlayService?
     private var airPlayServer: AirPlayServer?
 
+    /// This receiver's identity (name, ports, device ID, signing key). One per
+    /// window, so multiple receivers can run side by side. `nonisolated` because
+    /// the off-main connection/advertising paths read it; it's immutable apart
+    /// from `name`, which guards itself with a lock.
+    nonisolated let identity: ReceiverIdentity
+    /// Mirrors `identity.name` for SwiftUI (window title, footer). Update via
+    /// `rename(to:)` so the Bonjour advertisement and title stay in sync.
+    @Published var displayName: String
+
+    init(identity: ReceiverIdentity = ReceiverIdentity(slot: 0, name: AirPlayConfig.serverName)) {
+        self.identity = identity
+        self.displayName = identity.name
+    }
+
     /// Watchdog timer that fires if the state stays in `.connecting` too long.
     private var connectingTimeoutTask: Task<Void, Never>?
     /// How long to wait in `.connecting` before reverting to `.idle`.
@@ -87,14 +101,14 @@ class AirPlayManager: ObservableObject {
     }
 
     func start() {
-        logger.info("Starting AirPlay services")
+        logger.info("Starting AirPlay services for \"\(self.identity.name)\" on port \(self.identity.ports.airplay)")
         state = .idle
 
         airPlayServer = AirPlayServer(manager: self)
-        airPlayServer?.start(port: AirPlayConfig.airplayPort)
+        airPlayServer?.start(port: identity.ports.airplay)
 
         airPlayService = AirPlayService()
-        airPlayService?.startAdvertising(port: Int(AirPlayConfig.airplayPort))
+        airPlayService?.startAdvertising(identity: identity)
     }
 
     func restart() {

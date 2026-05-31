@@ -16,17 +16,20 @@ class AirPlayConnection {
 
     private var buffer = Data()
 
+    /// This connection's receiver identity (ports, device ID, signing key).
+    private let identity: ReceiverIdentity
+
     // Handlers
-    private let pairSetupHandler = PairSetupHandler()
-    private let pairVerifyHandler = PairVerifyHandler()
+    private let pairSetupHandler: PairSetupHandler
+    private let pairVerifyHandler: PairVerifyHandler
     private let fairPlayHandler = FairPlayHandler()
 
-    // Mirror stream
+    // Mirror stream — ports are derived from this receiver's identity.
     private var mirrorStreamReceiver: MirrorStreamReceiver?
-    private let videoStreamPort = AirPlayConfig.videoStreamPort
-    private let timingPort = AirPlayConfig.ntpTimingPort
-    private let audioStreamPort = AirPlayConfig.audioStreamPort
-    private let audioControlPort = AirPlayConfig.audioControlPort
+    private var videoStreamPort: UInt16 { identity.ports.video }
+    private var timingPort: UInt16 { identity.ports.ntp }
+    private var audioStreamPort: UInt16 { identity.ports.audioData }
+    private var audioControlPort: UInt16 { identity.ports.audioControl }
 
     // Audio stream
     private var audioStreamReceiver: AudioStreamReceiver?
@@ -47,6 +50,10 @@ class AirPlayConnection {
     init(connection: NWConnection, manager: AirPlayManager?) {
         self.connection = connection
         self.manager = manager
+        let id = manager?.identity ?? ReceiverIdentity(slot: 0, name: AirPlayConfig.serverName)
+        self.identity = id
+        self.pairSetupHandler = PairSetupHandler(identity: id)
+        self.pairVerifyHandler = PairVerifyHandler(identity: id)
     }
 
     func start() {
@@ -219,14 +226,14 @@ class AirPlayConnection {
                let qualifier = plist["qualifier"] as? [String],
                let firstQualifier = qualifier.first {
                 logger.debug("GET /info with qualifier: \(firstQualifier)")
-                let body = AirPlayConfig.infoQualifierResponseData(qualifier: firstQualifier)
+                let body = AirPlayConfig.infoQualifierResponseData(identity, qualifier: firstQualifier)
                 sendResponse(HTTPResponse.okBplist(cseq: request.cseq, body: body))
                 return
             }
         }
 
         logger.debug("GET /info (full response)")
-        let body = AirPlayConfig.infoResponseData()
+        let body = AirPlayConfig.infoResponseData(identity)
         sendResponse(HTTPResponse.okBplist(cseq: request.cseq, body: body))
     }
 

@@ -13,6 +13,11 @@ enum PairVerifyResult {
 
 class PairVerifyHandler {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "PairVerify")
+    private let identity: ReceiverIdentity
+
+    init(identity: ReceiverIdentity) {
+        self.identity = identity
+    }
 
     // Ephemeral Curve25519 key pair for this session
     private var ephemeralPrivateKey: Curve25519.KeyAgreement.PrivateKey?
@@ -89,7 +94,7 @@ class PairVerifyHandler {
         signatureInput.append(privateKey.publicKey.rawRepresentation)
         signatureInput.append(clientPubKeyData)
 
-        guard let signature = try? AirPlayConfig.ed25519PrivateKey.signature(for: signatureInput) else {
+        guard let signature = try? identity.ed25519PrivateKey.signature(for: signatureInput) else {
             logger.error("pair-verify stage 1: signing failed")
             return Data()
         }

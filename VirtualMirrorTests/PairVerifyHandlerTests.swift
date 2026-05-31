@@ -18,7 +18,7 @@ final class PairVerifyHandlerTests: XCTestCase {
     }
 
     func testStage1ProducesServerKeyAndSharedSecret() {
-        let handler = PairVerifyHandler()
+        let handler = PairVerifyHandler(identity: ReceiverIdentity(slot: 0, name: "Test"))
         let clientPriv = Curve25519.KeyAgreement.PrivateKey()
 
         let result = handler.handle(requestBody: stage1Request(clientPublicKey: clientPriv.publicKey))
@@ -32,7 +32,7 @@ final class PairVerifyHandlerTests: XCTestCase {
     }
 
     func testStage1SharedSecretMatchesClientSide() {
-        let handler = PairVerifyHandler()
+        let handler = PairVerifyHandler(identity: ReceiverIdentity(slot: 0, name: "Test"))
         let clientPriv = Curve25519.KeyAgreement.PrivateKey()
 
         guard case .ok(let response) = handler.handle(requestBody: stage1Request(clientPublicKey: clientPriv.publicKey)) else {
@@ -50,7 +50,7 @@ final class PairVerifyHandlerTests: XCTestCase {
     }
 
     func testStage1RejectsInvalidClientKey() {
-        let handler = PairVerifyHandler()
+        let handler = PairVerifyHandler(identity: ReceiverIdentity(slot: 0, name: "Test"))
         // 32 bytes that aren't a valid Curve25519 point handling is lenient, but a
         // too-short body must not crash and must not yield a shared secret.
         var body = Data([0x01, 0x00, 0x00, 0x00])
@@ -63,7 +63,7 @@ final class PairVerifyHandlerTests: XCTestCase {
     }
 
     func testShortBodyReturnsEmptyOk() {
-        let handler = PairVerifyHandler()
+        let handler = PairVerifyHandler(identity: ReceiverIdentity(slot: 0, name: "Test"))
         guard case .ok(let response) = handler.handle(requestBody: Data([0x00, 0x01])) else {
             return XCTFail("Too-short body should return .ok(empty)")
         }
@@ -74,7 +74,7 @@ final class PairVerifyHandlerTests: XCTestCase {
     /// an unverifiable stage-2 payload is tolerated (.ok). If enforcement is
     /// turned on, this expectation flips to `.reject` — update intentionally.
     func testStage2PolicyMatchesConfig() {
-        let handler = PairVerifyHandler()
+        let handler = PairVerifyHandler(identity: ReceiverIdentity(slot: 0, name: "Test"))
         // Establish session keys via a real stage 1 first.
         let clientPriv = Curve25519.KeyAgreement.PrivateKey()
         _ = handler.handle(requestBody: stage1Request(clientPublicKey: clientPriv.publicKey))
