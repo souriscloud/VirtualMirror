@@ -114,6 +114,12 @@ final class SessionLifecycleTests: XCTestCase {
         try await waitForState(manager, .mirroring("Phone B"))
         phoneB.send(RTSPClient.request("TEARDOWN", cseq: 3))
         try await waitForState(manager, .idle)
+
+        // The sender re-establishes the mirror stream on the same connection
+        // without another RECORD: the UI resumes mirroring.
+        let streams = try bplist(["streams": [["type": 110, "streamConnectionID": 1]]])
+        phoneB.send(RTSPClient.request("SETUP", cseq: 4, body: streams, contentType: "application/x-apple-binary-plist"))
+        try await waitForState(manager, .mirroring("Phone B"))
     }
 
     // MARK: - Helpers

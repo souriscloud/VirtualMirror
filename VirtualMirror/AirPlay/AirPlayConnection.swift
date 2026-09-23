@@ -24,6 +24,12 @@ class AirPlayConnection {
     private let queue = DispatchQueue(label: "cloud.souris.virtualmirror.airplay-connection", qos: .userInteractive)
     /// Set once the connection has been torn down and the manager told.
     private var finished = false
+    /// Set by RECORD. A later screen-mirror SETUP on the same connection (the
+    /// sender re-establishing streams after a full TEARDOWN) resumes mirroring
+    /// in the UI without waiting for a RECORD that may not come again.
+    private var hasRecorded = false
+    /// The sender's name from session SETUP, for the UI.
+    private var senderName: String?
 
     private var buffer = Data()
 
@@ -383,6 +389,7 @@ class AirPlayConnection {
         // Extract device name for UI state
         if let name = plist["name"] as? String {
             logger.info("Device: \(name)")
+            senderName = name
             manager?.didStartConnecting(session: sessionID, deviceName: name)
         }
 
@@ -423,6 +430,9 @@ class AirPlayConnection {
                     streamConnectionID = UInt64(connID)
                 }
                 startMirrorStream(streamConnectionID: streamConnectionID)
+                if hasRecorded {
+                    manager?.didStartMirroring(session: sessionID, deviceName: senderName)
+                }
                 responseStreams.append([
                     "type": StreamType.screenMirror,
                     "dataPort": Int(videoStreamPort),
@@ -446,7 +456,8 @@ class AirPlayConnection {
 
     private func handleRecord(_ request: HTTPRequest) {
         logger.info("Handling RECORD - mirroring started!")
-        manager?.didStartMirroring(session: sessionID)
+        hasRecorded = true
+        manager?.didStartMirroring(session: sessionID, deviceName: senderName)
         let headers = [
             "Audio-Latency": "11025",
             "Audio-Jack-Status": "connected; type=analog"
@@ -502,6 +513,9 @@ class AirPlayConnection {
             // sends only this typeless TEARDOWN when mirroring stops, with no
             // preceding type-110 teardown, and may keep the connection open.
             resetStreamResources()
+            // Reset the decoder here, in order on this queue, so it happens
+            // before any re-SETUP on this connection configures a new stream.
+            manager?.videoDecoder.reset()
             manager?.didEndSession(sessionID)
         }
 

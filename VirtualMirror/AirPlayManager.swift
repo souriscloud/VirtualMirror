@@ -184,12 +184,12 @@ class AirPlayManager: ObservableObject {
         }
     }
 
-    nonisolated func didStartMirroring(session: UUID) {
+    nonisolated func didStartMirroring(session: UUID, deviceName: String? = nil) {
         Task { @MainActor in
             if case .error = self.state { return }
             self.activeSession = session
             self.connectingTimeoutTask?.cancel()
-            let name = self.state.deviceName ?? "Unknown"
+            let name = deviceName ?? self.state.deviceName ?? "Unknown"
             self.state = .mirroring(name)
             self.startStatsPolling()
         }
@@ -205,7 +205,9 @@ class AirPlayManager: ObservableObject {
             self.connectingTimeoutTask?.cancel()
             self.stopStatsPolling()
             self.state = .idle
-            self.videoDecoder.reset()
+            // The decoder is deliberately not reset here: this runs later, on
+            // main, and could wipe a stream the same connection has already set
+            // up again. The connection resets it in order on its own queue.
         }
     }
 
