@@ -21,16 +21,25 @@ if [[ -z "$TOOL" ]]; then
 fi
 shift
 
-# Search for the tool in DerivedData SPM artifacts
-DERIVED_DATA="$HOME/Library/Developer/Xcode/DerivedData"
 SPARKLE_BIN=""
 
-for dir in "$DERIVED_DATA"/VirtualMirror-*/SourcePackages/artifacts/sparkle/Sparkle/bin; do
-    if [[ -x "$dir/$TOOL" ]]; then
-        SPARKLE_BIN="$dir/$TOOL"
-        break
-    fi
-done
+# Preferred: an explicit tools directory (release.sh resolves packages into a
+# fixed location and exports this, so the tools match the linked Sparkle).
+if [[ -n "${SPARKLE_BIN_DIR:-}" && -x "$SPARKLE_BIN_DIR/$TOOL" ]]; then
+    SPARKLE_BIN="$SPARKLE_BIN_DIR/$TOOL"
+fi
+
+# Otherwise search DerivedData SPM artifacts, newest first, so a stale
+# DerivedData folder with an older Sparkle doesn't win.
+DERIVED_DATA="$HOME/Library/Developer/Xcode/DerivedData"
+if [[ -z "$SPARKLE_BIN" ]]; then
+    while IFS= read -r dir; do
+        if [[ -x "$dir/$TOOL" ]]; then
+            SPARKLE_BIN="$dir/$TOOL"
+            break
+        fi
+    done < <(ls -dt "$DERIVED_DATA"/VirtualMirror-*/SourcePackages/artifacts/sparkle/Sparkle/bin 2>/dev/null)
+fi
 
 # Fallback: check if tool is on PATH
 if [[ -z "$SPARKLE_BIN" ]] && command -v "$TOOL" &>/dev/null; then

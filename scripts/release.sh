@@ -12,8 +12,9 @@
 #   4. Export with Developer ID signing
 #   5. Notarize and staple the .app
 #   6. Create branded DMG, sign, notarize, staple
-#   7. Generate Sparkle appcast via generate_appcast
-#   8. Git commit, push, create GitHub Release with DMG
+#   7. Generate Sparkle appcast via generate_appcast (+ normalize URLs)
+#   8. Git commit, tag, create GitHub Release with DMG + deltas, then push
+#      the branch (the appcast only goes live once its downloads exist)
 #
 # One-time setup (before first release):
 #   1. Install "Developer ID Application" certificate
@@ -56,6 +57,11 @@ DMG_VOLUME_NAME="VirtualMirror"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_DIR/build/release"
 ARCHIVE_PATH="$BUILD_DIR/$APP_NAME.xcarchive"
+# Resolve SPM packages into a fixed directory so the Sparkle CLI tools we run
+# always match the Sparkle version linked into the app (not whichever stale
+# DerivedData folder happens to be found first).
+PACKAGES_DIR="$PROJECT_DIR/build/SourcePackages"
+export SPARKLE_BIN_DIR="$PACKAGES_DIR/artifacts/sparkle/Sparkle/bin"
 EXPORT_DIR="$BUILD_DIR/export"
 RELEASES_DIR="$PROJECT_DIR/releases"
 
@@ -92,6 +98,9 @@ IFS='.' read -ra VER_PARTS <<< "$VERSION"
 MAJOR="${VER_PARTS[0]}"
 MINOR="${VER_PARTS[1]}"
 PATCH="${VER_PARTS[2]}"
+if (( MINOR > 99 || PATCH > 99 )); then
+    error "Minor and patch must be < 100 (build number is MAJOR*10000 + MINOR*100 + PATCH)"
+fi
 BUILD_NUMBER=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
 
 DMG_FILENAME="$APP_NAME-$VERSION.dmg"
@@ -119,6 +128,13 @@ fi
 if ! xcrun notarytool history --keychain-profile "$NOTARYTOOL_PROFILE" &>/dev/null 2>&1; then
     error "Notarization credentials not found for profile '$NOTARYTOOL_PROFILE'. Run:\n  xcrun notarytool store-credentials \"$NOTARYTOOL_PROFILE\" --apple-id <email> --team-id $TEAM_ID --password <app-specific-password>"
 fi
+
+# Resolve packages (also fetches the Sparkle CLI tools)
+xcodebuild -resolvePackageDependencies \
+    -project "$PROJECT_DIR/$PROJECT" \
+    -scheme "$SCHEME" \
+    -clonedSourcePackagesDirPath "$PACKAGES_DIR" \
+    -quiet
 
 # Check Sparkle tools
 if ! sparkle_tool generate_keys -p &>/dev/null 2>&1; then
@@ -205,6 +221,8 @@ xcodebuild archive \
     -scheme "$SCHEME" \
     -configuration Release \
     -archivePath "$ARCHIVE_PATH" \
+    -destination 'generic/platform=macOS' \
+    -clonedSourcePackagesDirPath "$PACKAGES_DIR" \
     -quiet
 
 [[ -d "$ARCHIVE_PATH" ]] || error "Archive failed — $ARCHIVE_PATH not found"
@@ -367,6 +385,7 @@ xcrun notarytool submit "$DMG_BUILD_PATH" \
     --wait
 
 xcrun stapler staple "$DMG_BUILD_PATH"
+xcrun stapler validate "$DMG_BUILD_PATH"
 
 success "DMG signed, notarized, and stapled"
 
@@ -386,13 +405,26 @@ DOWNLOAD_PREFIX="https://github.com/$GITHUB_REPO/releases/download/v$VERSION/"
 # from the embedded app bundles, signs them with the EdDSA key from the
 # Keychain, and writes a properly formatted appcast.xml.
 #
-# --download-url-prefix sets the base URL for each DMG's download link.
-# Since each version may have a different GH release tag URL, we use
-# --versions to only process the new DMG (preserving existing entries).
+# It also writes binary deltas (VirtualMirror<new>-<old>.delta) from each
+# older DMG to the new one; those get uploaded with the release below.
+#
+# --download-url-prefix is applied to *every* item, which would point older
+# DMGs at this release's tag, so appcast-tool.py rewrites each URL to its own
+# item's tag and drops deltas from all but the newest item.
 sparkle_tool generate_appcast \
     --download-url-prefix "$DOWNLOAD_PREFIX" \
     -o "$PROJECT_DIR/appcast.xml" \
     "$RELEASES_DIR"
+"$SCRIPT_DIR/appcast-tool.py" fix "$PROJECT_DIR/appcast.xml" "$GITHUB_REPO"
+
+DELTA_FILES=()
+while IFS= read -r delta; do
+    DELTA_FILES+=("$RELEASES_DIR/$delta")
+done < <(sed -n 's|.*releases/download/v'"$VERSION"'/\([^"]*\.delta\)".*|\1|p' "$PROJECT_DIR/appcast.xml")
+for delta in ${DELTA_FILES[@]+"${DELTA_FILES[@]}"}; do
+    [[ -f "$delta" ]] || error "Appcast references a delta that doesn't exist: $delta"
+done
+info "Deltas to upload: ${#DELTA_FILES[@]}"
 
 success "Appcast updated at appcast.xml"
 
@@ -407,20 +439,30 @@ cd "$PROJECT_DIR"
 git add "$PBXPROJ" appcast.xml "$CHANGELOG"
 git commit -m "Release v$VERSION"
 
-# Push to remote
-CURRENT_BRANCH=$(git branch --show-current)
-git push origin "$CURRENT_BRANCH"
+# Publish the tag and the release assets *before* pushing the branch: Sparkle
+# reads appcast.xml from master, so pushing it first would advertise an update
+# whose downloads don't exist yet.
+git tag "v$VERSION"
+git push origin "v$VERSION"
 
-# Create GitHub release with DMG attached, using changelog as release notes
 NOTES_FILE=$(mktemp)
 echo "$RELEASE_NOTES" > "$NOTES_FILE"
 gh release create "v$VERSION" \
     "$RELEASES_DIR/$DMG_FILENAME" \
+    ${DELTA_FILES[@]+"${DELTA_FILES[@]}"} \
     --repo "$GITHUB_REPO" \
+    --verify-tag \
     --title "v$VERSION" \
     --notes-file "$NOTES_FILE" \
     --latest
 rm -f "$NOTES_FILE"
+
+CURRENT_BRANCH=$(git branch --show-current)
+git push origin "$CURRENT_BRANCH"
+
+info "Verifying every appcast download URL"
+"$SCRIPT_DIR/appcast-tool.py" check "$PROJECT_DIR/appcast.xml" "$GITHUB_REPO" --online \
+    || warn "Some appcast URLs are not reachable yet (see above)"
 
 RELEASE_URL="https://github.com/$GITHUB_REPO/releases/tag/v$VERSION"
 
