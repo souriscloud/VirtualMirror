@@ -83,7 +83,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
 private struct HelpHeader: View {
     let icon: String
     let title: String
-    var subtitle: String? = nil
+    var subtitle: String?
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
@@ -138,7 +138,7 @@ private struct StepRow: View {
     }
 }
 
-private func Para(_ text: String) -> some View {
+private func para(_ text: String) -> some View {
     Text(text)
         .font(.callout)
         .foregroundStyle(.secondary)
@@ -178,7 +178,7 @@ private struct HelpWelcome: View {
         VStack(alignment: .leading, spacing: 22) {
             HelpHeader(icon: "sparkles", title: "Welcome to VirtualMirror",
                        subtitle: "AirPlay screen mirroring for your Mac.")
-            Para("VirtualMirror turns your Mac into an AirPlay receiver — mirror an iPhone or iPad screen to a native window, no Apple TV required. It runs quietly in the menu bar and shows live connection status.")
+            para("VirtualMirror turns your Mac into an AirPlay receiver — mirror an iPhone or iPad screen to a native window, no Apple TV required. It runs quietly in the menu bar and shows live connection status.")
             VStack(alignment: .leading, spacing: 14) {
                 HelpPoint(icon: "iphone.gen3", lead: "Mirror any iPhone or iPad",
                           body_: "Pick VirtualMirror from Screen Mirroring in Control Center and your device appears in a window on the Mac.")
@@ -203,7 +203,7 @@ private struct HelpMirroring: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             HelpHeader(icon: "iphone.gen3", title: "Start Mirroring")
-            Para("Make sure your iPhone/iPad and this Mac are on the same Wi-Fi network, then:")
+            para("Make sure your iPhone/iPad and this Mac are on the same Wi-Fi network, then:")
             VStack(alignment: .leading, spacing: 12) {
                 StepRow(number: 1, text: "Launch VirtualMirror — it appears in the menu bar and shows a waiting screen.")
                 StepRow(number: 2, text: "On your iPhone or iPad, open Control Center.")
@@ -225,7 +225,7 @@ private struct HelpAudio: View {
             HelpHeader(icon: "speaker.wave.2.fill", title: "Audio & Volume")
             VStack(alignment: .leading, spacing: 14) {
                 HelpPoint(icon: "speaker.wave.2.fill", lead: "Audio passthrough",
-                          body_: "Sound from the mirrored device plays through your Mac's current output.")
+                          body_: "Sound from the mirrored device plays through your Mac's current output — and follows along if you switch it (AirPods, speakers, headphones) mid-session.")
                 HelpPoint(icon: "slider.horizontal.3", lead: "Volume slider",
                           body_: "Hover over the mirroring window to reveal the volume slider.")
                 HelpPoint(icon: "speaker.slash.fill", lead: "Mute",
@@ -264,12 +264,16 @@ private struct HelpTroubleshooting: View {
             VStack(alignment: .leading, spacing: 14) {
                 HelpPoint(icon: "airplayvideo", lead: "VirtualMirror isn't in the list",
                           body_: "macOS has its own built-in AirPlay Receiver. If it's on, your device may connect to it instead. Turn it off in System Settings → General → AirDrop & Handoff → AirPlay Receiver.")
+                HelpPoint(icon: "exclamationmark.triangle", lead: "The window shows an error",
+                          body_: "If a receiver can't start — its port is taken by another copy of VirtualMirror or another AirPlay receiver, or it's missing Local Network access — the window says why. Fix the cause, then click Retry.")
                 HelpPoint(icon: "wifi", lead: "Won't connect or keeps dropping",
-                          body_: "Confirm both devices are on the same Wi-Fi network. Restart VirtualMirror (Quit from the menu bar, then relaunch).")
+                          body_: "Confirm both devices are on the same Wi-Fi network. If it's still stuck, use Restart This Receiver from the command palette (⌘K), or quit from the menu bar and relaunch.")
+                HelpPoint(icon: "iphone.and.arrow.forward", lead: "Another device took over",
+                          body_: "Each receiver shows one device at a time, so a second device mirroring to the same receiver replaces the first. To show both, open another receiver with ⌘N.")
                 HelpPoint(icon: "lock.shield", lead: "Blocked by a firewall",
-                          body_: "VirtualMirror listens on port 47000. If you run a firewall, allow incoming connections to it.")
+                          body_: "The first receiver listens on port 47000, and each additional one 1000 higher (48000, 49000, …). If you run a firewall, allow incoming connections to VirtualMirror.")
                 HelpPoint(icon: "dot.radiowaves.left.and.right", lead: "Local network permission",
-                          body_: "The first time, macOS may ask VirtualMirror for permission to find devices on your local network — allow it so AirPlay discovery works.")
+                          body_: "The first time, macOS asks VirtualMirror for permission to find devices on your local network — allow it so AirPlay discovery works. If you declined, turn it on in System Settings → Privacy & Security → Local Network, then click Retry.")
             }
         }
     }
@@ -295,7 +299,7 @@ private struct HelpPrivacy: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             HelpHeader(icon: "lock.shield", title: "Privacy & Security")
-            Para("VirtualMirror is a local AirPlay receiver. The video and audio stream goes straight from your device to this Mac over your network — there's no cloud, no account, and no telemetry.")
+            para("VirtualMirror is a local AirPlay receiver. The video and audio stream goes straight from your device to this Mac over your network — there's no cloud, no account, and no telemetry.")
             VStack(alignment: .leading, spacing: 14) {
                 HelpPoint(icon: "person.badge.shield.checkmark", lead: "Fresh identity per receiver",
                           body_: "Each receiver generates its own pairing identity on the spot — nothing is persisted, so it's a clean slate every launch.")
@@ -312,7 +316,7 @@ private struct HelpSupport: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             HelpHeader(icon: "heart.fill", title: "Support & Feedback")
-            Para("VirtualMirror is free and open source, built by one person. Bug reports and ideas genuinely shape it — and if it saves you time, a coffee keeps it going.")
+            para("VirtualMirror is free and open source, built by one person. Bug reports and ideas genuinely shape it — and if it saves you time, a coffee keeps it going.")
             VStack(alignment: .leading, spacing: 12) {
                 Button {
                     FeedbackWindowController.shared.showWindow()

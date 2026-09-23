@@ -2,7 +2,7 @@
 #
 # Intentionally conservative: this is the first lint pass over an existing
 # codebase, so the noisier opinionated rules are disabled and thresholds are
-# relaxed. Tighten over time, then make the CI lint job a required check.
+# relaxed. CI runs it with --strict, so any violation fails the build.
 
 included:
   - VirtualMirror

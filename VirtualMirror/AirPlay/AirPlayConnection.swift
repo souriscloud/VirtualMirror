@@ -2,7 +2,9 @@ import Foundation
 import Network
 import os
 
-class AirPlayConnection {
+// @unchecked Sendable: all mutable state is confined to `queue` (the
+// NWConnection's callback queue; public entry points hop onto it).
+final class AirPlayConnection: @unchecked Sendable {
     /// AirPlay RTSP stream type identifiers (the `type` field in a SETUP stream dict).
     private enum StreamType {
         static let screenMirror = 110
@@ -13,6 +15,23 @@ class AirPlayConnection {
     private let connection: NWConnection
     private weak var manager: AirPlayManager?
     var onClose: (() -> Void)?
+
+    /// Identifies this connection's session to the manager, so events from a
+    /// connection that's being replaced can't clobber the current session's UI.
+    private let sessionID = UUID()
+
+    /// Every piece of mutable state here — request handling, stream setup and
+    /// teardown, volume — runs on this serial queue. The NWConnection delivers
+    /// its callbacks here, and the public entry points hop onto it.
+    private let queue = DispatchQueue(label: "cloud.souris.virtualmirror.airplay-connection", qos: .userInteractive)
+    /// Set once the connection has been torn down and the manager told.
+    private var finished = false
+    /// Set by RECORD. A later screen-mirror SETUP on the same connection (the
+    /// sender re-establishing streams after a full TEARDOWN) resumes mirroring
+    /// in the UI without waiting for a RECORD that may not come again.
+    private var hasRecorded = false
+    /// The sender's name from session SETUP, for the UI.
+    private var senderName: String?
 
     private var buffer = Data()
 
@@ -64,27 +83,42 @@ class AirPlayConnection {
                 self?.receiveData()
             case .failed(let error):
                 self?.logger.error("Connection failed: \(error)")
-                self?.close()
+                self?.finish()
             case .cancelled:
                 self?.logger.info("Connection cancelled")
-                self?.manager?.didDisconnect()
-                self?.onClose?()
+                self?.finish()
             default:
                 break
             }
         }
-        connection.start(queue: .global(qos: .userInteractive))
+        connection.start(queue: queue)
     }
 
+    /// Closes the connection from outside (eviction by a newer sender, receiver
+    /// shutdown). The block holds a strong reference, so the manager is always
+    /// told the session ended even if the caller drops its last reference now.
     func close() {
+        queue.async { self.finish() }
+    }
+
+    /// Tears everything down exactly once and reports the end of the session.
+    /// Must run on `queue`.
+    private func finish() {
+        guard !finished else { return }
+        finished = true
         connection.cancel()
         shutdownAllResources()
+        manager?.didEndSession(sessionID)
+        onClose?()
+        onClose = nil
     }
 
     /// Sets the audio volume on the active audio stream receiver.
     func setVolume(_ volume: Float) {
-        currentVolume = volume
-        audioStreamReceiver?.volume = volume
+        queue.async {
+            self.currentVolume = volume
+            self.audioStreamReceiver?.volume = volume
+        }
     }
 
     /// Full shutdown: stops all listeners, receivers, and helper services.
@@ -119,22 +153,26 @@ class AirPlayConnection {
 
             if isComplete {
                 self.logger.info("Connection closed by remote")
-                self.close()
+                self.finish()
                 return
             }
 
             if let error = error {
                 self.logger.error("Receive error: \(error)")
-                self.close()
+                self.finish()
                 return
             }
+
+            guard !self.finished else { return }
 
             self.receiveData()
         }
     }
 
     private func processBuffer() {
-        while !buffer.isEmpty {
+        // Stop as soon as a handler closes the connection (e.g. a rejected
+        // pair-verify) — don't act on requests still sitting in the buffer.
+        while !buffer.isEmpty && !finished {
             switch HTTPParser.parse(data: buffer) {
             case .needsMore:
                 return
@@ -144,7 +182,7 @@ class AirPlayConnection {
             case .error(let message):
                 logger.error("HTTP parse error: \(message)")
                 buffer.removeAll()
-                close()
+                finish()
                 return
             }
         }
@@ -259,7 +297,7 @@ class AirPlayConnection {
         case .reject:
             logger.error("pair-verify rejected — closing connection")
             sendResponse(HTTPResponse.build(status: 470, statusText: "Connection Authorization Required", cseq: request.cseq))
-            close()
+            finish()
         }
     }
 
@@ -353,7 +391,8 @@ class AirPlayConnection {
         // Extract device name for UI state
         if let name = plist["name"] as? String {
             logger.info("Device: \(name)")
-            manager?.didStartConnecting(deviceName: name)
+            senderName = name
+            manager?.didStartConnecting(session: sessionID, deviceName: name)
         }
 
         // Read the iPhone's timing port and start active NTP sync
@@ -393,6 +432,9 @@ class AirPlayConnection {
                     streamConnectionID = UInt64(connID)
                 }
                 startMirrorStream(streamConnectionID: streamConnectionID)
+                if hasRecorded {
+                    manager?.didStartMirroring(session: sessionID, deviceName: senderName)
+                }
                 responseStreams.append([
                     "type": StreamType.screenMirror,
                     "dataPort": Int(videoStreamPort),
@@ -416,7 +458,8 @@ class AirPlayConnection {
 
     private func handleRecord(_ request: HTTPRequest) {
         logger.info("Handling RECORD - mirroring started!")
-        manager?.didStartMirroring()
+        hasRecorded = true
+        manager?.didStartMirroring(session: sessionID, deviceName: senderName)
         let headers = [
             "Audio-Latency": "11025",
             "Audio-Jack-Status": "connected; type=analog"
@@ -439,7 +482,7 @@ class AirPlayConnection {
 
         var responseBody = ""
         if paramName.contains("volume") {
-            responseBody = "volume: 0.500000\r\n"
+            responseBody = String(format: "volume: %.6f\r\n", AirPlayConnection.airPlayVolume(fromLinear: currentVolume))
         }
         // Respond with the parameter value
         sendResponse(HTTPResponse.ok(
@@ -453,32 +496,53 @@ class AirPlayConnection {
     private func handleTeardown(_ request: HTTPRequest) {
         logger.info("TEARDOWN")
 
-        // Parse the TEARDOWN body — it may specify which streams to tear down
-        if let plist = try? PropertyListSerialization.propertyList(from: request.body, options: [], format: nil) as? [String: Any] {
-            if let streams = plist["streams"] as? [[String: Any]] {
-                // Selective teardown: only reset the specified stream types
-                for stream in streams {
-                    let type = stream["type"] as? Int ?? -1
-                    logger.debug("Tearing down stream type: \(type)")
-                    if type == StreamType.screenMirror {
-                        mirrorStreamReceiver?.resetStream()
-                    } else if type == StreamType.audio {
-                        audioStreamReceiver?.resetStream()
-                    }
+        switch AirPlayConnection.teardownScope(body: request.body) {
+        case .streams(let types):
+            // Selective teardown: only reset the specified stream types
+            for type in types {
+                logger.debug("Tearing down stream type: \(type)")
+                if type == StreamType.screenMirror {
+                    mirrorStreamReceiver?.resetStream()
+                } else if type == StreamType.audio {
+                    audioStreamReceiver?.resetStream()
                 }
-            } else {
-                // Full teardown — reset all stream resources but keep listeners
-                resetStreamResources()
             }
-        } else {
-            // No body or unparseable — reset everything
+        case .session:
+            // Full teardown (no stream list): the sender has ended the session.
+            // Reset stream resources but keep the listeners and the control
+            // connection — the sender may SETUP again on it (lock/unlock) — and
+            // tell the manager, so the UI doesn't sit on the last frame. iOS 27
+            // sends only this typeless TEARDOWN when mirroring stops, with no
+            // preceding type-110 teardown, and may keep the connection open.
             resetStreamResources()
+            // Reset the decoder here, in order on this queue, so it happens
+            // before any re-SETUP on this connection configures a new stream.
+            manager?.videoDecoder.reset()
+            manager?.didEndSession(sessionID)
         }
 
-        // Do NOT call manager?.didDisconnect() here — the control connection is still alive.
-        // The sender will issue a new SETUP after rotation/lock. didDisconnect() is called
-        // when the NWConnection itself closes (in the .cancelled state handler).
         sendResponse(HTTPResponse.ok(cseq: request.cseq, isRTSP: true))
+    }
+
+    enum TeardownScope: Equatable {
+        /// Only these stream types (e.g. 110 screen mirror, 96 audio).
+        case streams([Int])
+        /// The whole session: no body, an unparseable body, or no stream list.
+        case session
+    }
+
+    static func teardownScope(body: Data) -> TeardownScope {
+        guard let plist = try? PropertyListSerialization.propertyList(from: body, options: [], format: nil) as? [String: Any],
+              let streams = plist["streams"] as? [[String: Any]] else {
+            return .session
+        }
+        return .streams(streams.map { $0["type"] as? Int ?? -1 })
+    }
+
+    /// AirPlay expresses volume in dB: -30 (quietest) … 0 (full), -144 = muted.
+    static func airPlayVolume(fromLinear volume: Float) -> Double {
+        guard volume > 0 else { return -144 }
+        return max(-30, min(0, 20 * log10(Double(volume))))
     }
 
     // MARK: - Mirror Stream
@@ -551,7 +615,7 @@ class AirPlayConnection {
                 // down so resources are reclaimed and the manager sees the drop,
                 // rather than leaving a half-dead connection waiting for input.
                 self?.logger.error("Send error: \(error) — closing connection")
-                self?.close()
+                self?.finish()
             }
         })
     }

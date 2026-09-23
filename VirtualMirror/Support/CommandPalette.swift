@@ -50,8 +50,11 @@ enum CommandMatcher {
 
         var s = 0
         let lowTitle = title.lowercased(), lowNeedle = needle.lowercased()
-        if lowTitle.hasPrefix(lowNeedle) { s += 200 - (title.count - needle.count) }
-        else if lowTitle.contains(lowNeedle) { s += 80 }
+        if lowTitle.hasPrefix(lowNeedle) {
+            s += 200 - (title.count - needle.count)
+        } else if lowTitle.contains(lowNeedle) {
+            s += 80
+        }
 
         var ni2 = 0, hi2 = 0, run = 0
         var prev: Character = " "

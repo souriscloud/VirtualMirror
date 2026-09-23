@@ -31,7 +31,7 @@ final class PairVerifyHandlerTests: XCTestCase {
         XCTAssertNotNil(handler.derivedSharedSecret, "ECDH shared secret should be available after stage 1")
     }
 
-    func testStage1SharedSecretMatchesClientSide() {
+    func testStage1SharedSecretMatchesClientSide() throws {
         let handler = PairVerifyHandler(identity: ReceiverIdentity(slot: 0, name: "Test"))
         let clientPriv = Curve25519.KeyAgreement.PrivateKey()
 
@@ -41,8 +41,8 @@ final class PairVerifyHandlerTests: XCTestCase {
 
         // The first 32 bytes of the response are the server's ephemeral public key.
         let serverPubData = response.prefix(32)
-        let serverPub = try! Curve25519.KeyAgreement.PublicKey(rawRepresentation: serverPubData)
-        let clientSideSecret = try! clientPriv.sharedSecretFromKeyAgreement(with: serverPub)
+        let serverPub = try Curve25519.KeyAgreement.PublicKey(rawRepresentation: serverPubData)
+        let clientSideSecret = try clientPriv.sharedSecretFromKeyAgreement(with: serverPub)
         let clientSideBytes = clientSideSecret.withUnsafeBytes { Data($0) }
 
         XCTAssertEqual(handler.derivedSharedSecret, clientSideBytes,

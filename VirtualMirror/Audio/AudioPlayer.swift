@@ -1,14 +1,26 @@
 import Foundation
-import AVFoundation
+@preconcurrency import AVFoundation
 import os
 
 /// Plays decoded PCM audio through the default audio output using AVAudioEngine.
-class AudioPlayer {
+///
+/// Not thread-safe on its own: every call must come from `queue` (the owning
+/// AudioStreamReceiver's state queue). Engine configuration-change
+/// notifications are hopped onto that queue too.
+///
+/// @unchecked Sendable: every call happens on `queue` (see above).
+final class AudioPlayer: @unchecked Sendable {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "AudioPlayer")
+    private let queue: DispatchQueue
     private var engine: AVAudioEngine?
     private var playerNode: AVAudioPlayerNode?
     private var audioFormat: AVAudioFormat?
     private var isRunning = false
+    private var configurationObserver: NSObjectProtocol?
+
+    init(queue: DispatchQueue) {
+        self.queue = queue
+    }
 
     /// Volume level (0.0 = silent, 1.0 = full). Applied to the player node.
     var volume: Float = 1.0 {
@@ -47,6 +59,7 @@ class AudioPlayer {
             self.engine = eng
             self.playerNode = node
             isRunning = true
+            observeConfigurationChanges(of: eng)
             logger.info("Audio player started: \(sampleRate) Hz, \(channels) ch, volume=\(self.volume)")
         } catch {
             logger.error("Failed to start audio engine: \(error)")
@@ -82,7 +95,37 @@ class AudioPlayer {
         playerNode.scheduleBuffer(buffer, completionHandler: nil)
     }
 
+    /// The engine stops itself when the output device changes (AirPods, a
+    /// monitor's speakers, unplugging headphones). Restart it so audio carries
+    /// on instead of staying silent until the next stream SETUP.
+    private func observeConfigurationChanges(of engine: AVAudioEngine) {
+        let engineID = ObjectIdentifier(engine)
+        configurationObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: engine,
+            queue: nil
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.queue.async { self.restartAfterConfigurationChange(of: engineID) }
+        }
+    }
+
+    private func restartAfterConfigurationChange(of changedEngine: ObjectIdentifier) {
+        guard isRunning, let engine, ObjectIdentifier(engine) == changedEngine, let playerNode else { return }
+        logger.info("Audio output configuration changed — restarting engine")
+        do {
+            try engine.start()
+            playerNode.play()
+        } catch {
+            logger.error("Failed to restart audio engine after configuration change: \(error)")
+        }
+    }
+
     func stop() {
+        if let observer = configurationObserver {
+            NotificationCenter.default.removeObserver(observer)
+            configurationObserver = nil
+        }
         if isRunning {
             playerNode?.stop()
             engine?.stop()

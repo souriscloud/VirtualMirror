@@ -138,7 +138,7 @@ private struct AckSection: View {
     let title: String
     let description: String
     let license: String
-    var url: String? = nil
+    var url: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {

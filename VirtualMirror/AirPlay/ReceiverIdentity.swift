@@ -9,7 +9,10 @@ import Security
 /// Ephemeral by design: a fresh device ID, signing key, and UUIDs are generated
 /// on creation and live only for the lifetime of this object — nothing is
 /// persisted, so each receiver is a clean slate every launch.
-final class ReceiverIdentity {
+///
+/// @unchecked Sendable: everything is immutable except `name`, which is
+/// guarded by `nameLock`.
+final class ReceiverIdentity: @unchecked Sendable {
     struct Ports {
         let airplay: UInt16
         let video: UInt16

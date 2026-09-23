@@ -2,7 +2,8 @@ import Foundation
 import Network
 import os
 
-class MirrorStreamReceiver {
+// @unchecked Sendable: all mutable state is confined to `queue`.
+final class MirrorStreamReceiver: @unchecked Sendable {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "MirrorStream")
     private var listener: NWListener?
     private var connection: NWConnection?
@@ -10,6 +11,12 @@ class MirrorStreamReceiver {
     private let videoDecoder: VideoDecoder
     private var videoDecryptor = VideoDecryptor()
     private var buffer = Data()
+
+    /// All state above is owned by this queue: the listener, the data connection
+    /// and its receive callbacks run on it, and the public entry points (called
+    /// from the control connection's queue) hop onto it. This keeps SETUP/TEARDOWN
+    /// from swapping the decryptor or buffer out from under an in-flight packet.
+    private let queue = DispatchQueue(label: "cloud.souris.virtualmirror.mirror-stream", qos: .userInteractive)
 
     // Packet header size
     private static let headerSize = 128
@@ -35,9 +42,12 @@ class MirrorStreamReceiver {
         self.videoDecoder = videoDecoder
     }
 
-    /// Configures encryption keys for the current stream.
-    /// Called during SETUP — no concurrent streaming at this point.
+    /// Configures encryption keys for the current stream (during SETUP).
     func configureEncryption(fairplayKey: Data?, ecdhSecret: Data?, streamConnectionID: UInt64) {
+        queue.sync { _configureEncryption(fairplayKey: fairplayKey, ecdhSecret: ecdhSecret, streamConnectionID: streamConnectionID) }
+    }
+
+    private func _configureEncryption(fairplayKey: Data?, ecdhSecret: Data?, streamConnectionID: UInt64) {
         if let fpKey = fairplayKey, let ecdh = ecdhSecret {
             let (derivedKey, derivedIV) = StreamKeyDerivation.deriveMirrorKeys(fairplayKey: fpKey, ecdhSecret: ecdh, streamConnectionID: streamConnectionID)
             currentDecryptKey = derivedKey
@@ -65,8 +75,12 @@ class MirrorStreamReceiver {
     /// Resets the stream for a new session (rotation/reconnect).
     /// Closes the current data connection and clears the buffer, but
     /// keeps the listener alive so the new connection can bind immediately.
-    /// Called during TEARDOWN/SETUP — no concurrent streaming at this point.
+    /// Called during TEARDOWN/SETUP.
     func resetStream() {
+        queue.sync { _resetStream() }
+    }
+
+    private func _resetStream() {
         connectionGeneration &+= 1
         connection?.cancel()
         connection = nil
@@ -79,6 +93,10 @@ class MirrorStreamReceiver {
     }
 
     func start() {
+        queue.sync { _start() }
+    }
+
+    private func _start() {
         guard listener == nil else {
             logger.debug("Mirror stream listener already running on port \(self.port)")
             return
@@ -112,10 +130,15 @@ class MirrorStreamReceiver {
             self?.handleMirrorConnection(nwConnection)
         }
 
-        listener?.start(queue: .global(qos: .userInteractive))
+        listener?.start(queue: queue)
     }
 
     func stop() {
+        queue.sync { _stop() }
+    }
+
+    private func _stop() {
+        connectionGeneration &+= 1
         connection?.cancel()
         listener?.cancel()
         connection = nil
@@ -154,7 +177,7 @@ class MirrorStreamReceiver {
             }
         }
 
-        nwConnection.start(queue: .global(qos: .userInteractive))
+        nwConnection.start(queue: queue)
     }
 
     private func receiveData(generation: UInt64) {
