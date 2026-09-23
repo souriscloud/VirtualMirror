@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Errors now show in the receiver window, with a Retry button. This covers the AirPlay port already being in use (e.g. a second copy of VirtualMirror or another receiver), Local Network access being denied, and Bonjour advertising failing. Previously the window showed "waiting" forever while the iPhone failed to connect.
+- Audio recovers by itself when the Mac's output device changes (AirPods, monitor speakers, unplugging headphones). Previously it stayed silent until mirroring restarted.
+- 10 new tests covering the session lifecycle: ending, eviction and TEARDOWN handling, including an end-to-end test over a real listener. The suite now has 58 tests.
+- A CI check that every appcast download URL points at its own release, plus `scripts/appcast-tool.py` to fix and verify the appcast (`check --online` also requests every URL).
+
+### Changed
+
+- Updated Sparkle from 2.9.0 to 2.10.0. This includes upstream security fixes to the installer and to delta updates, and brings update windows to the front correctly in menu-bar apps.
+- The GetParameter volume query now reports the receiver's real volume, in AirPlay's dB scale, instead of a fixed value.
+- CI now runs on `macos-26` with Xcode 26.6.
+- The release script:
+  - uploads the delta updates alongside the DMG
+  - publishes the GitHub release before pushing the appcast, so an update is never advertised before its download exists
+  - runs Sparkle's tools from the same version that is linked into the app
+  - validates the DMG's notarization ticket
+  - checks every appcast URL after publishing
+
+### Fixed
+
+- The window no longer stays on "Mirroring" with a frozen last frame after the sender stops mirroring. This covers iOS 27, which ends a session with a TEARDOWN that doesn't name a stream.
+- When a second device (or any other TCP client) connected to a receiver, the first session was dropped without the UI noticing. The window could then sit on a frozen frame or on "Connecting" indefinitely.
+- The 30-second "Connecting" timeout now also closes the stuck connection, so the sender gives up cleanly.
+- Fixed potential crashes when closing or restarting a receiver, or when a sender reconnected while streaming. Video, audio and Bonjour resources were torn down on one thread while another was still using them.
+- Each iPhone lock/unlock no longer leaks timing-sync network connections.
+- Commands from the menu-bar Command Palette now act on the most recently focused receiver instead of the first one, when no receiver window is focused.
+- Delta updates now actually work: their files had never been uploaded, and the appcast pointed older versions' downloads at the wrong release.
+- A rejected pair-verify now stops processing any further requests already buffered on that connection.
+
 ## [0.4.0] - 2026-05-31
 
 ### Added

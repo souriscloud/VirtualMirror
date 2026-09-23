@@ -16,6 +16,13 @@ class VideoDecoder: ObservableObject {
     private var lastSPS: Data?
     private var lastPPS: Data?
 
+    /// Guards the session state above. `reset()` runs on the control connection
+    /// (and on main at disconnect) while `configureWithAVCC`/`decodeVideoData`
+    /// run on the mirror stream's queue; without this, a reset could invalidate
+    /// the session mid-decode. The VT output callback doesn't take this lock, so
+    /// holding it across `VTDecompressionSessionDecodeFrame` can't deadlock.
+    private let sessionLock = NSLock()
+
     // Output: decoded sample buffers for display
     @Published var latestSampleBuffer: CMSampleBuffer?
 
@@ -32,6 +39,7 @@ class VideoDecoder: ObservableObject {
     /// Resets the decoder state so it can be reconfigured with new codec parameters.
     /// Called when the mirroring session reconnects (e.g. after rotation or lock/unlock).
     func reset() {
+        sessionLock.lock(); defer { sessionLock.unlock() }
         if let session = decompressionSession {
             VTDecompressionSessionInvalidate(session)
             decompressionSession = nil
@@ -50,6 +58,7 @@ class VideoDecoder: ObservableObject {
     }
 
     func configureWithAVCC(_ avccData: Data) {
+        sessionLock.lock(); defer { sessionLock.unlock() }
         // Reset error counter so first errors after codec change are always logged
         decodeErrorCount = 0
 
@@ -201,6 +210,7 @@ class VideoDecoder: ObservableObject {
     private var decodeErrorCount = 0
 
     func decodeVideoData(_ data: Data, timestamp: UInt64) {
+        sessionLock.lock(); defer { sessionLock.unlock() }
         guard let session = decompressionSession, let formatDesc = formatDescription else {
             logger.warning("Decoder not ready (session=\(self.decompressionSession != nil), fmt=\(self.formatDescription != nil)), dropping \(data.count) bytes")
             return

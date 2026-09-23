@@ -20,9 +20,11 @@ import os
 class AudioStreamReceiver {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "AudioStream")
 
-    /// Serial queue for all audio stream state (packet processing, dedup, sync).
-    /// Both data and control dispatch sources dispatch onto this queue.
-    private let stateQueue = DispatchQueue(label: "cloud.souris.virtualmirror.audiostream", qos: .userInteractive)
+    /// Serial queue for all audio stream state (packet processing, dedup, sync,
+    /// decoder and player). Both dispatch sources run on it, and the public entry
+    /// points (called from the control connection) hop onto it, so SETUP/TEARDOWN
+    /// can't dispose the decoder or engine while a packet is being processed.
+    private let stateQueue: DispatchQueue
 
     // Data socket (receives RTP audio packets)
     private var dataSocket: Int32 = -1
@@ -35,12 +37,19 @@ class AudioStreamReceiver {
     let controlPort: UInt16
 
     private let audioDecoder = AudioDecoder()
-    private let audioPlayer = AudioPlayer()
+    private let audioPlayer: AudioPlayer
+
+    /// Whether incoming packets should be processed. Cleared on reset/stop so
+    /// packets that arrive between sessions are drained and dropped. The read
+    /// sources themselves live as long as their sockets: a source must be
+    /// cancelled (and its cancel handler run) before its fd may be closed.
+    private var streamActive = false
 
     /// Volume level (0.0 = silent, 1.0 = full). Forwarded to AudioPlayer.
     var volume: Float = 1.0 {
         didSet {
-            audioPlayer.volume = volume
+            let volume = volume
+            stateQueue.async { self.audioPlayer.volume = volume }
         }
     }
 
@@ -82,6 +91,9 @@ class AudioStreamReceiver {
     init(port: UInt16, controlPort: UInt16) {
         self.port = port
         self.controlPort = controlPort
+        let queue = DispatchQueue(label: "cloud.souris.virtualmirror.audiostream", qos: .userInteractive)
+        self.stateQueue = queue
+        self.audioPlayer = AudioPlayer(queue: queue)
     }
 
     /// Configures the audio stream from the SETUP plist stream dictionary.
@@ -89,6 +101,12 @@ class AudioStreamReceiver {
     ///   key = SHA-512(fairplayKey || ecdhSecret)[0..15]
     ///   iv  = eiv from session SETUP (raw, 16 bytes)
     func configure(streamInfo: [String: Any], fairplayKey: Data?, ecdhSecret: Data?, eiv: Data?) {
+        stateQueue.sync {
+            _configure(streamInfo: streamInfo, fairplayKey: fairplayKey, ecdhSecret: ecdhSecret, eiv: eiv)
+        }
+    }
+
+    private func _configure(streamInfo: [String: Any], fairplayKey: Data?, ecdhSecret: Data?, eiv: Data?) {
         // Extract audio parameters
         if let ct = streamInfo["ct"] as? Int {
             logger.debug("Audio compression type: \(ct)")
@@ -139,12 +157,13 @@ class AudioStreamReceiver {
     }
 
     /// Resets the stream for a new session (rotation/reconnect).
-    /// Keeps sockets alive but resets dispatch sources, decoder, and player.
+    /// Keeps sockets alive but resets stream state, decoder, and player.
     func resetStream() {
-        dataReadSource?.cancel()
-        dataReadSource = nil
-        controlReadSource?.cancel()
-        controlReadSource = nil
+        stateQueue.sync { _resetStream() }
+    }
+
+    private func _resetStream() {
+        streamActive = false
         packetCount = 0
         controlPacketCount = 0
         initialSyncReceived = false
@@ -163,8 +182,11 @@ class AudioStreamReceiver {
 
     /// Starts both UDP socket listeners. Idempotent — no-ops if already running.
     func start() {
-        startDataSocket()
-        startControlSocket()
+        stateQueue.sync {
+            startDataSocket()
+            startControlSocket()
+            streamActive = true
+        }
     }
 
     private func startDataSocket() {
@@ -259,8 +281,9 @@ class AudioStreamReceiver {
             fileDescriptor: dataSocket,
             queue: stateQueue
         )
+        let fd = dataSocket
         source.setEventHandler { [weak self] in self?.readDataPackets() }
-        source.setCancelHandler { [weak self] in self?.logger.debug("Audio data dispatch source cancelled") }
+        source.setCancelHandler { Darwin.close(fd) }
         source.resume()
         dataReadSource = source
     }
@@ -271,8 +294,9 @@ class AudioStreamReceiver {
             fileDescriptor: controlSocket,
             queue: stateQueue
         )
+        let fd = controlSocket
         source.setEventHandler { [weak self] in self?.readControlPackets() }
-        source.setCancelHandler { [weak self] in self?.logger.debug("Audio control dispatch source cancelled") }
+        source.setCancelHandler { Darwin.close(fd) }
         source.resume()
         controlReadSource = source
     }
@@ -297,6 +321,7 @@ class AudioStreamReceiver {
                 }
                 break
             }
+            guard streamActive else { continue }
             let data = Data(buffer.prefix(bytesRead))
             processRTPPacket(data)
         }
@@ -315,6 +340,7 @@ class AudioStreamReceiver {
                 }
             }
             guard bytesRead > 0 else { break }
+            guard streamActive else { continue }
 
             // Learn the remote control address from the first packet
             if remoteControlAddr == nil {
@@ -330,18 +356,27 @@ class AudioStreamReceiver {
 
     /// Full shutdown: stops sockets, dispatch sources, decoder, and player.
     func stop() {
-        dataReadSource?.cancel()
-        dataReadSource = nil
-        controlReadSource?.cancel()
-        controlReadSource = nil
-        if dataSocket >= 0 {
+        stateQueue.sync { _stop() }
+    }
+
+    private func _stop() {
+        streamActive = false
+        // Each source's cancel handler closes its socket; only close directly
+        // when no source was ever attached to it.
+        if let source = dataReadSource {
+            source.cancel()
+        } else if dataSocket >= 0 {
             Darwin.close(dataSocket)
-            dataSocket = -1
         }
-        if controlSocket >= 0 {
+        if let source = controlReadSource {
+            source.cancel()
+        } else if controlSocket >= 0 {
             Darwin.close(controlSocket)
-            controlSocket = -1
         }
+        dataReadSource = nil
+        controlReadSource = nil
+        dataSocket = -1
+        controlSocket = -1
         audioPlayer.stop()
         audioDecoder.stop()
         decryptKey = nil

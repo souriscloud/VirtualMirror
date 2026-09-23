@@ -1,5 +1,7 @@
 import Foundation
 import SwiftUI
+import Network
+import dnssd
 import os
 
 enum AirPlayState: Equatable {
@@ -59,6 +61,11 @@ class AirPlayManager: ObservableObject {
         self.displayName = identity.name
     }
 
+    /// The control connection that currently owns the UI state. Session events
+    /// from any other connection (e.g. one being evicted by a newer sender) are
+    /// ignored, so a late disconnect can't knock a new session back to idle.
+    private var activeSession: UUID?
+
     /// Watchdog timer that fires if the state stays in `.connecting` too long.
     private var connectingTimeoutTask: Task<Void, Never>?
     /// How long to wait in `.connecting` before reverting to `.idle`.
@@ -100,14 +107,24 @@ class AirPlayManager: ObservableObject {
         mirroringStartedAt = nil
     }
 
+    /// Starts listening and advertising. Idempotent — SwiftUI may call it from
+    /// `onAppear` more than once, and a second listener/advertisement would leak.
     func start() {
+        guard airPlayServer == nil else { return }
         logger.info("Starting AirPlay services for \"\(self.identity.name)\" on port \(self.identity.ports.airplay)")
         state = .idle
 
+        let port = identity.ports.airplay
         airPlayServer = AirPlayServer(manager: self)
-        airPlayServer?.start(port: identity.ports.airplay)
+        airPlayServer?.onFailure = { [weak self] error in
+            self?.didEncounterError(AirPlayManager.listenerErrorMessage(error, port: port))
+        }
+        airPlayServer?.start(port: port)
 
         airPlayService = AirPlayService()
+        airPlayService?.onFailure = { [weak self] code in
+            self?.didEncounterError(AirPlayManager.bonjourErrorMessage(code))
+        }
         airPlayService?.startAdvertising(identity: identity)
     }
 
@@ -130,32 +147,47 @@ class AirPlayManager: ObservableObject {
 
     func stop() {
         logger.info("Stopping AirPlay services")
+        stopServices()
+        state = .idle
+    }
+
+    private func stopServices() {
+        connectingTimeoutTask?.cancel()
         stopStatsPolling()
+        activeSession = nil
         airPlayService?.stopAdvertising()
         airPlayServer?.stop()
         airPlayService = nil
         airPlayServer = nil
-        state = .idle
     }
 
-    nonisolated func didStartConnecting(deviceName: String) {
+    // MARK: - Session events (called from connection queues)
+
+    nonisolated func didStartConnecting(session: UUID, deviceName: String) {
         Task { @MainActor in
+            if case .error = self.state { return }
+            self.activeSession = session
             self.connectingTimeoutTask?.cancel()
             self.stopStatsPolling()
             self.state = .connecting(deviceName)
 
-            // Start watchdog — revert to idle if RECORD never arrives
+            // Watchdog — if RECORD never arrives, drop the stuck handshake so the
+            // sender gives up cleanly, and go back to waiting.
             self.connectingTimeoutTask = Task { @MainActor in
                 try? await Task.sleep(for: .seconds(AirPlayManager.connectingTimeout))
-                guard !Task.isCancelled, case .connecting = self.state else { return }
-                self.logger.warning("Connecting timeout — reverting to idle")
+                guard !Task.isCancelled, case .connecting = self.state, self.activeSession == session else { return }
+                self.logger.warning("Connecting timeout — closing connection and reverting to idle")
+                self.airPlayServer?.closeAllConnections()
+                self.activeSession = nil
                 self.state = .idle
             }
         }
     }
 
-    nonisolated func didStartMirroring() {
+    nonisolated func didStartMirroring(session: UUID) {
         Task { @MainActor in
+            if case .error = self.state { return }
+            self.activeSession = session
             self.connectingTimeoutTask?.cancel()
             let name = self.state.deviceName ?? "Unknown"
             self.state = .mirroring(name)
@@ -163,8 +195,13 @@ class AirPlayManager: ObservableObject {
         }
     }
 
-    nonisolated func didDisconnect() {
+    /// The sender ended the session (a full TEARDOWN) or its control connection
+    /// closed. Returns to waiting unless another session has since taken over.
+    nonisolated func didEndSession(_ session: UUID) {
         Task { @MainActor in
+            guard self.activeSession == nil || self.activeSession == session else { return }
+            if case .error = self.state { return }
+            self.activeSession = nil
             self.connectingTimeoutTask?.cancel()
             self.stopStatsPolling()
             self.state = .idle
@@ -172,11 +209,37 @@ class AirPlayManager: ObservableObject {
         }
     }
 
+    /// A service-level failure (listener or Bonjour). Stops listening and
+    /// advertising so senders don't see a receiver that can't accept them, and
+    /// shows the error with a Retry button.
     nonisolated func didEncounterError(_ message: String) {
         Task { @MainActor in
-            self.connectingTimeoutTask?.cancel()
-            self.stopStatsPolling()
+            if case .error = self.state { return }
+            self.logger.error("Receiver error: \(message)")
+            self.stopServices()
             self.state = .error(message)
         }
     }
+
+    // MARK: - Error messages
+
+    nonisolated static func listenerErrorMessage(_ error: NWError, port: UInt16) -> String {
+        if case .posix(let code) = error, code == .EADDRINUSE {
+            return "Port \(port) is already in use. Another copy of VirtualMirror or another AirPlay receiver may be running — quit it and click Retry."
+        }
+        if case .dns(let code) = error, code == DNSServiceErrorType(kDNSServiceErr_PolicyDenied) {
+            return localNetworkDeniedMessage
+        }
+        return "Couldn't listen for AirPlay connections on port \(port): \(error.localizedDescription)"
+    }
+
+    nonisolated static func bonjourErrorMessage(_ code: DNSServiceErrorType) -> String {
+        if code == DNSServiceErrorType(kDNSServiceErr_PolicyDenied) {
+            return localNetworkDeniedMessage
+        }
+        return "Couldn't advertise this receiver on the network (Bonjour error \(code))."
+    }
+
+    nonisolated static let localNetworkDeniedMessage =
+        "VirtualMirror doesn't have Local Network access, so iPhones and iPads can't find it. Allow it in System Settings › Privacy & Security › Local Network, then click Retry."
 }

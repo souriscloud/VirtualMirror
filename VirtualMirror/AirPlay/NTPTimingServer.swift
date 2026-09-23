@@ -10,6 +10,10 @@ class NTPTimingServer {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "NTPTiming")
     private var listener: NWListener?
     private var activeConnection: NWConnection?
+    /// Inbound flows accepted by the listener (the sender's timing requests).
+    /// Tracked so `stop()` can cancel them — otherwise each session SETUP
+    /// (every lock/unlock) would leak the previous session's flows.
+    private var passiveConnections: [ObjectIdentifier: NWConnection] = [:]
     private var activeSyncTimer: DispatchSourceTimer?
     /// Serial queue protecting mutable state (sequenceNumber, connections, timer).
     private let stateQueue = DispatchQueue(label: "cloud.souris.virtualmirror.ntptiming", qos: .userInteractive)
@@ -21,6 +25,10 @@ class NTPTimingServer {
     }
 
     func start() {
+        stateQueue.sync { _start() }
+    }
+
+    private func _start() {
         do {
             let params = NWParameters.udp
             params.allowLocalEndpointReuse = true
@@ -50,6 +58,10 @@ class NTPTimingServer {
     /// Start actively sending NTP timing requests to the iPhone's timing port.
     /// This is critical for keeping the AirPlay session alive.
     func startActiveSync(remoteHost: NWEndpoint.Host, remotePort: UInt16) {
+        stateQueue.sync { _startActiveSync(remoteHost: remoteHost, remotePort: remotePort) }
+    }
+
+    private func _startActiveSync(remoteHost: NWEndpoint.Host, remotePort: UInt16) {
         logger.info("Starting active NTP sync to \(String(describing: remoteHost)):\(remotePort)")
 
         guard let nwPort = NWEndpoint.Port(rawValue: remotePort) else {
@@ -88,6 +100,10 @@ class NTPTimingServer {
             activeConnection = nil
             listener?.cancel()
             listener = nil
+            for conn in passiveConnections.values {
+                conn.cancel()
+            }
+            passiveConnections.removeAll()
         }
     }
 
@@ -151,9 +167,16 @@ class NTPTimingServer {
     // MARK: - Passive NTP (respond to iPhone's requests)
 
     private func handleConnection(_ conn: NWConnection) {
+        let id = ObjectIdentifier(conn)
+        passiveConnections[id] = conn
         conn.stateUpdateHandler = { [weak self] state in
-            if case .ready = state {
+            switch state {
+            case .ready:
                 self?.receiveTimingRequest(on: conn)
+            case .failed, .cancelled:
+                self?.passiveConnections.removeValue(forKey: id)
+            default:
+                break
             }
         }
         conn.start(queue: stateQueue)

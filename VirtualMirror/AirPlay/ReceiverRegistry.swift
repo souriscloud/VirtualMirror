@@ -14,6 +14,11 @@ final class ReceiverRegistry {
     private(set) var managers: [AirPlayManager] = []
     private var usedSlots: Set<Int> = []
     private var windowMap: [ObjectIdentifier: AirPlayManager] = [:]
+    /// The receiver whose window was most recently key. Commands invoked while
+    /// no receiver window is key (the status-bar menu or palette with the app
+    /// inactive) act on this one rather than on an arbitrary first receiver.
+    private weak var lastFocusedManager: AirPlayManager?
+    private var keyObservers: [ObjectIdentifier: NSObjectProtocol] = [:]
 
     /// Bridge to SwiftUI's `openWindow`, captured when a window appears.
     var openWindowAction: (() -> Void)?
@@ -45,11 +50,29 @@ final class ReceiverRegistry {
         manager.stop()
         usedSlots.remove(manager.identity.slot)
         managers.removeAll { $0 === manager }
+        for (key, value) in windowMap where value === manager {
+            if let observer = keyObservers.removeValue(forKey: key) {
+                NotificationCenter.default.removeObserver(observer)
+            }
+        }
         windowMap = windowMap.filter { $0.value !== manager }
+        if lastFocusedManager === manager { lastFocusedManager = nil }
     }
 
     func bind(window: NSWindow, to manager: AirPlayManager) {
-        windowMap[ObjectIdentifier(window)] = manager
+        let key = ObjectIdentifier(window)
+        windowMap[key] = manager
+        if window.isKeyWindow { lastFocusedManager = manager }
+        if let old = keyObservers.removeValue(forKey: key) {
+            NotificationCenter.default.removeObserver(old)
+        }
+        keyObservers[key] = NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeKeyNotification,
+            object: window,
+            queue: .main
+        ) { [weak self, weak manager] _ in
+            MainActor.assumeIsolated { self?.lastFocusedManager = manager }
+        }
     }
 
     func window(for manager: AirPlayManager) -> NSWindow? {
@@ -59,9 +82,11 @@ final class ReceiverRegistry {
         return nil
     }
 
-    /// The receiver whose window is frontmost (falls back to the only/first one).
+    /// The receiver whose window is key, else the one most recently key, else
+    /// the first.
     var focusedManager: AirPlayManager? {
         if let key = NSApp.keyWindow, let m = windowMap[ObjectIdentifier(key)] { return m }
+        if let last = lastFocusedManager, managers.contains(where: { $0 === last }) { return last }
         return managers.first
     }
 
