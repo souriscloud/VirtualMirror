@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-23
+
 ### Added
 
 - Errors now show in the receiver window, with a Retry button. This covers the AirPlay port already being in use (e.g. a second copy of VirtualMirror or another receiver), Local Network access being denied, and Bonjour advertising failing. Previously the window showed "waiting" forever while the iPhone failed to connect.
@@ -154,7 +156,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated release pipeline (archive, sign, notarize, DMG, GitHub Release)
 - Branded DMG installer with background artwork
 
-[Unreleased]: https://github.com/souriscloud/VirtualMirror/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/souriscloud/VirtualMirror/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/souriscloud/VirtualMirror/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/souriscloud/VirtualMirror/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/souriscloud/VirtualMirror/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/souriscloud/VirtualMirror/compare/v0.3.0...v0.3.1
