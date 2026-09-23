@@ -83,7 +83,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
 private struct HelpHeader: View {
     let icon: String
     let title: String
-    var subtitle: String? = nil
+    var subtitle: String?
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
@@ -138,7 +138,7 @@ private struct StepRow: View {
     }
 }
 
-private func Para(_ text: String) -> some View {
+private func para(_ text: String) -> some View {
     Text(text)
         .font(.callout)
         .foregroundStyle(.secondary)
@@ -178,7 +178,7 @@ private struct HelpWelcome: View {
         VStack(alignment: .leading, spacing: 22) {
             HelpHeader(icon: "sparkles", title: "Welcome to VirtualMirror",
                        subtitle: "AirPlay screen mirroring for your Mac.")
-            Para("VirtualMirror turns your Mac into an AirPlay receiver — mirror an iPhone or iPad screen to a native window, no Apple TV required. It runs quietly in the menu bar and shows live connection status.")
+            para("VirtualMirror turns your Mac into an AirPlay receiver — mirror an iPhone or iPad screen to a native window, no Apple TV required. It runs quietly in the menu bar and shows live connection status.")
             VStack(alignment: .leading, spacing: 14) {
                 HelpPoint(icon: "iphone.gen3", lead: "Mirror any iPhone or iPad",
                           body_: "Pick VirtualMirror from Screen Mirroring in Control Center and your device appears in a window on the Mac.")
@@ -203,7 +203,7 @@ private struct HelpMirroring: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             HelpHeader(icon: "iphone.gen3", title: "Start Mirroring")
-            Para("Make sure your iPhone/iPad and this Mac are on the same Wi-Fi network, then:")
+            para("Make sure your iPhone/iPad and this Mac are on the same Wi-Fi network, then:")
             VStack(alignment: .leading, spacing: 12) {
                 StepRow(number: 1, text: "Launch VirtualMirror — it appears in the menu bar and shows a waiting screen.")
                 StepRow(number: 2, text: "On your iPhone or iPad, open Control Center.")
@@ -295,7 +295,7 @@ private struct HelpPrivacy: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             HelpHeader(icon: "lock.shield", title: "Privacy & Security")
-            Para("VirtualMirror is a local AirPlay receiver. The video and audio stream goes straight from your device to this Mac over your network — there's no cloud, no account, and no telemetry.")
+            para("VirtualMirror is a local AirPlay receiver. The video and audio stream goes straight from your device to this Mac over your network — there's no cloud, no account, and no telemetry.")
             VStack(alignment: .leading, spacing: 14) {
                 HelpPoint(icon: "person.badge.shield.checkmark", lead: "Fresh identity per receiver",
                           body_: "Each receiver generates its own pairing identity on the spot — nothing is persisted, so it's a clean slate every launch.")
@@ -312,7 +312,7 @@ private struct HelpSupport: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             HelpHeader(icon: "heart.fill", title: "Support & Feedback")
-            Para("VirtualMirror is free and open source, built by one person. Bug reports and ideas genuinely shape it — and if it saves you time, a coffee keeps it going.")
+            para("VirtualMirror is free and open source, built by one person. Bug reports and ideas genuinely shape it — and if it saves you time, a coffee keeps it going.")
             VStack(alignment: .leading, spacing: 12) {
                 Button {
                     FeedbackWindowController.shared.showWindow()

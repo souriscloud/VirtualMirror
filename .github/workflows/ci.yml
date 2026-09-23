@@ -56,9 +56,6 @@ jobs:
   lint:
     name: SwiftLint
     runs-on: macos-26
-    # Non-blocking while the team tunes the ruleset on a previously-unlinted
-    # codebase. Flip to a required check (and add --strict) once it's green.
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -67,4 +64,4 @@ jobs:
         run: brew install swiftlint
 
       - name: Run SwiftLint
-        run: swiftlint lint --reporter github-actions-logging
+        run: swiftlint lint --strict --reporter github-actions-logging

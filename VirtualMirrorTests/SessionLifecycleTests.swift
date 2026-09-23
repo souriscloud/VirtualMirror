@@ -160,7 +160,7 @@ private final class RTSPClient {
     }
 
     static func connect(port: UInt16) async throws -> RTSPClient {
-        let connection = NWConnection(host: "127.0.0.1", port: NWEndpoint.Port(rawValue: port)!, using: .tcp)
+        let connection = NWConnection(host: "127.0.0.1", port: try XCTUnwrap(NWEndpoint.Port(rawValue: port)), using: .tcp)
         let client = RTSPClient(connection: connection)
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             // Only one of ready/failed/waiting may resume the continuation.

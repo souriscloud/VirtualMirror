@@ -92,19 +92,19 @@ struct AirPlayConfig {
                     "overscanned": NSNumber(value: false),
                     "refreshRate": NSNumber(value: 1.0 / 60.0),
                     "maxFPS": NSNumber(value: 30 as UInt64),
-                ] as [String : Any]
+                ] as [String: Any]
             ],
             "audioFormats": [
                 [
                     "type": NSNumber(value: 100 as UInt64),
                     "audioInputFormats": NSNumber(value: 0x03FFFFFC as UInt64),
                     "audioOutputFormats": NSNumber(value: 0x03FFFFFC as UInt64),
-                ] as [String : Any],
+                ] as [String: Any],
                 [
                     "type": NSNumber(value: 101 as UInt64),
                     "audioInputFormats": NSNumber(value: 0x03FFFFFC as UInt64),
                     "audioOutputFormats": NSNumber(value: 0x03FFFFFC as UInt64),
-                ] as [String : Any],
+                ] as [String: Any],
             ],
             "audioLatencies": [
                 [
@@ -112,13 +112,13 @@ struct AirPlayConfig {
                     "audioType": "default",
                     "inputLatencyMicros": NSNumber(value: 0 as UInt64),
                     "outputLatencyMicros": NSNumber(value: false),
-                ] as [String : Any],
+                ] as [String: Any],
                 [
                     "type": NSNumber(value: 101 as UInt64),
                     "audioType": "default",
                     "inputLatencyMicros": NSNumber(value: 0 as UInt64),
                     "outputLatencyMicros": NSNumber(value: false),
-                ] as [String : Any],
+                ] as [String: Any],
             ],
         ]
         do {

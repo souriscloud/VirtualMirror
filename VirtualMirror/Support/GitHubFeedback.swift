@@ -98,6 +98,6 @@ enum GitHubFeedback {
         URL(string: "https://github.com/\(repo)/issues")
     }
 
-    static let kofiURL = URL(string: "https://ko-fi.com/souriscloud")!
-    static let repoURL = URL(string: "https://github.com/\(repo)")!
+    static let kofiURL = URL(string: "https://ko-fi.com/souriscloud")!  // swiftlint:disable:this force_unwrapping
+    static let repoURL = URL(string: "https://github.com/\(repo)")!  // swiftlint:disable:this force_unwrapping
 }

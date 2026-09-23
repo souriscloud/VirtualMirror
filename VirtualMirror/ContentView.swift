@@ -34,7 +34,7 @@ struct ContentView: View {
                                 .foregroundColor(.white)
                         }
 
-                    case .mirroring(_):
+                    case .mirroring:
                         MirroringView(airPlayManager: airPlayManager)
 
                     case .error(let message):

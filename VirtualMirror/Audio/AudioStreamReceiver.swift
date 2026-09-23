@@ -65,7 +65,7 @@ class AudioStreamReceiver {
 
     private var packetCount = 0
     private var controlPacketCount = 0
-    
+
     // Sync state — the iPhone sends type 0x54 sync packets on the control port.
     // UxPlay gates audio playback on receiving the first sync.
     private var initialSyncReceived = false
