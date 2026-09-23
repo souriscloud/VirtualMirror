@@ -13,7 +13,7 @@ xcodebuild build -project VirtualMirror.xcodeproj -scheme VirtualMirror -configu
 Open in Xcode: `open VirtualMirror.xcodeproj`
 
 - Deployment target: macOS 14.0
-- Swift version: 5.0
+- Swift version: 6.0 (Swift 6 language mode, complete concurrency checking)
 - Uses C bridging header for FairPlay code (`VirtualMirror/FairPlay/BridgingHeader.h`)
 
 ## Architecture

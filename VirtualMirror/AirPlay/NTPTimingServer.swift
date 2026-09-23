@@ -6,7 +6,9 @@ import os
 /// Handles both:
 /// 1. Responding to timing requests from the iPhone (passive)
 /// 2. Actively sending timing requests to the iPhone every 3 seconds (active)
-class NTPTimingServer {
+///
+/// @unchecked Sendable: all mutable state is confined to `stateQueue`.
+final class NTPTimingServer: @unchecked Sendable {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "NTPTiming")
     private var listener: NWListener?
     private var activeConnection: NWConnection?

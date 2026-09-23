@@ -3,7 +3,10 @@ import VideoToolbox
 import CoreMedia
 import os
 
-class VideoDecoder: ObservableObject {
+// @unchecked Sendable: the decompression session state is guarded by
+// `sessionLock`, stats and the error counter by `statsLock`, and
+// `latestSampleBuffer` is only written on the main thread.
+final class VideoDecoder: ObservableObject, @unchecked Sendable {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "VideoDecoder")
 
     private var decompressionSession: VTDecompressionSession?
@@ -49,8 +52,7 @@ class VideoDecoder: ObservableObject {
         lastSPS = nil
         lastPPS = nil
         frameCount = 0
-        decodeErrorCount = 0
-        statsLock.lock(); stats = Stats(); statsLock.unlock()
+        statsLock.lock(); stats = Stats(); decodeErrorCount = 0; statsLock.unlock()
         DispatchQueue.main.async { [weak self] in
             self?.latestSampleBuffer = nil
         }
@@ -60,7 +62,7 @@ class VideoDecoder: ObservableObject {
     func configureWithAVCC(_ avccData: Data) {
         sessionLock.lock(); defer { sessionLock.unlock() }
         // Reset error counter so first errors after codec change are always logged
-        decodeErrorCount = 0
+        statsLock.lock(); decodeErrorCount = 0; statsLock.unlock()
 
         // Parse avcC (ISO 14496-15) format:
         // byte 0: version (1)
@@ -207,7 +209,15 @@ class VideoDecoder: ObservableObject {
     }
 
     private var frameCount = 0
+    /// Log throttling only. Touched from the VT output callback's thread as
+    /// well as the decode path, so it lives under `statsLock`.
     private var decodeErrorCount = 0
+
+    private func countDecodeError() -> Int {
+        statsLock.lock(); defer { statsLock.unlock() }
+        decodeErrorCount += 1
+        return decodeErrorCount
+    }
 
     func decodeVideoData(_ data: Data, timestamp: UInt64) {
         sessionLock.lock(); defer { sessionLock.unlock() }
@@ -291,25 +301,23 @@ class VideoDecoder: ObservableObject {
             guard let self = self else { return }
             guard status == noErr, let pixelBuffer = pixelBuffer else {
                 if status != noErr {
-                    // Benign race on decodeErrorCount from VT's callback thread —
-                    // only used for log throttling, not correctness.
-                    self.decodeErrorCount += 1
-                    if self.decodeErrorCount <= 5 || self.decodeErrorCount % 100 == 0 {
-                        self.logger.error("Decode error: \(status) (count: \(self.decodeErrorCount))")
+                    let count = self.countDecodeError()
+                    if count <= 5 || count % 100 == 0 {
+                        self.logger.error("Decode error: \(status) (count: \(count))")
                     }
                 }
                 return
             }
-            self.decodeErrorCount = 0
+            self.statsLock.lock(); self.decodeErrorCount = 0; self.statsLock.unlock()
 
             // Create a new CMSampleBuffer from the decoded pixel buffer for display
             self.createDisplaySampleBuffer(from: pixelBuffer, time: presentationTime)
         }
 
         if decodeStatus != noErr {
-            decodeErrorCount += 1
-            if decodeErrorCount <= 5 || decodeErrorCount % 100 == 0 {
-                logger.error("VTDecompressionSessionDecodeFrame failed: \(decodeStatus) (count: \(self.decodeErrorCount))")
+            let count = countDecodeError()
+            if count <= 5 || count % 100 == 0 {
+                logger.error("VTDecompressionSessionDecodeFrame failed: \(decodeStatus) (count: \(count))")
             }
         }
     }
@@ -344,9 +352,11 @@ class VideoDecoder: ObservableObject {
 
         guard let buffer = sampleBuffer else { return }
 
-        // Publish on main thread for SwiftUI
+        // Publish on main thread for SwiftUI. The buffer is fully built and
+        // never mutated after this point, so handing it across is safe.
+        nonisolated(unsafe) let frame = buffer
         DispatchQueue.main.async { [weak self] in
-            self?.latestSampleBuffer = buffer
+            self?.latestSampleBuffer = frame
         }
     }
 

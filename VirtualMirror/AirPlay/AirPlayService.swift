@@ -4,7 +4,7 @@ import os
 
 /// Advertises AirPlay and RAOP Bonjour services using the DNS-SD C API.
 /// Replaces the deprecated NetService-based implementation.
-class AirPlayService {
+final class AirPlayService {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "AirPlayService")
 
     private var airplayRef: DNSServiceRef?

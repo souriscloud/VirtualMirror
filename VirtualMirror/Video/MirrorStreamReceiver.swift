@@ -2,7 +2,8 @@ import Foundation
 import Network
 import os
 
-class MirrorStreamReceiver {
+// @unchecked Sendable: all mutable state is confined to `queue`.
+final class MirrorStreamReceiver: @unchecked Sendable {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "MirrorStream")
     private var listener: NWListener?
     private var connection: NWConnection?

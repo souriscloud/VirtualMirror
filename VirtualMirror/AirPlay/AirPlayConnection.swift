@@ -2,7 +2,9 @@ import Foundation
 import Network
 import os
 
-class AirPlayConnection {
+// @unchecked Sendable: all mutable state is confined to `queue` (the
+// NWConnection's callback queue; public entry points hop onto it).
+final class AirPlayConnection: @unchecked Sendable {
     /// AirPlay RTSP stream type identifiers (the `type` field in a SETUP stream dict).
     private enum StreamType {
         static let screenMirror = 110

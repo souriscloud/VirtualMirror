@@ -1,5 +1,5 @@
 import Foundation
-import AVFoundation
+@preconcurrency import AVFoundation
 import os
 
 /// Plays decoded PCM audio through the default audio output using AVAudioEngine.
@@ -7,7 +7,9 @@ import os
 /// Not thread-safe on its own: every call must come from `queue` (the owning
 /// AudioStreamReceiver's state queue). Engine configuration-change
 /// notifications are hopped onto that queue too.
-class AudioPlayer {
+///
+/// @unchecked Sendable: every call happens on `queue` (see above).
+final class AudioPlayer: @unchecked Sendable {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "AudioPlayer")
     private let queue: DispatchQueue
     private var engine: AVAudioEngine?
@@ -97,18 +99,19 @@ class AudioPlayer {
     /// monitor's speakers, unplugging headphones). Restart it so audio carries
     /// on instead of staying silent until the next stream SETUP.
     private func observeConfigurationChanges(of engine: AVAudioEngine) {
+        let engineID = ObjectIdentifier(engine)
         configurationObserver = NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange,
             object: engine,
             queue: nil
         ) { [weak self] _ in
             guard let self else { return }
-            self.queue.async { self.restartAfterConfigurationChange(of: engine) }
+            self.queue.async { self.restartAfterConfigurationChange(of: engineID) }
         }
     }
 
-    private func restartAfterConfigurationChange(of changedEngine: AVAudioEngine) {
-        guard isRunning, let engine, engine === changedEngine, let playerNode else { return }
+    private func restartAfterConfigurationChange(of changedEngine: ObjectIdentifier) {
+        guard isRunning, let engine, ObjectIdentifier(engine) == changedEngine, let playerNode else { return }
         logger.info("Audio output configuration changed — restarting engine")
         do {
             try engine.start()

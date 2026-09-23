@@ -232,6 +232,7 @@ extension AppDelegate: NSMenuDelegate {
 
 // MARK: - About Window Controller
 
+@MainActor
 class AboutWindowController {
     static let shared = AboutWindowController()
     private var window: NSWindow?

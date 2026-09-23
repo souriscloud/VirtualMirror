@@ -17,7 +17,9 @@ import os
 ///   - Control socket (port 47104): receives sync/timing packets from the iPhone
 ///     and sends resend requests back. The iPhone sends type 0x54 sync packets here
 ///     before real audio data flows on the data port.
-class AudioStreamReceiver {
+///
+/// @unchecked Sendable: all mutable state is confined to `stateQueue`.
+final class AudioStreamReceiver: @unchecked Sendable {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "AudioStream")
 
     /// Serial queue for all audio stream state (packet processing, dedup, sync,

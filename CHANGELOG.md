@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated Sparkle from 2.9.0 to 2.10.0. This includes upstream security fixes to the installer and to delta updates, and brings update windows to the front correctly in menu-bar apps.
 - The GetParameter volume query now reports the receiver's real volume, in AirPlay's dB scale, instead of a fixed value.
 - CI now runs on `macos-26` with Xcode 26.6.
+- The project now builds in **Swift 6 language mode**, so the compiler checks for data races at compile time. Types that do all their work on one serial queue are marked `@unchecked Sendable`, with a comment explaining why each is safe. The video decoder's error counter, which the decode callback updated with no lock, is now locked.
+- SwiftLint is clean and now a required CI check (`--strict`).
 - The release script:
   - uploads the delta updates alongside the DMG
   - publishes the GitHub release before pushing the appcast, so an update is never advertised before its download exists

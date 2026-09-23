@@ -3,7 +3,10 @@ import Network
 import dnssd
 import os
 
-class AirPlayServer {
+// @unchecked Sendable: `connections` is guarded by `connectionQueue`; the
+// listener and `onFailure` are set up on the main actor before `start()` and
+// only torn down there.
+final class AirPlayServer: @unchecked Sendable {
     private let logger = Logger(subsystem: "cloud.souris.virtualmirror", category: "AirPlayServer")
     private var listener: NWListener?
     private var connections: [ObjectIdentifier: AirPlayConnection] = [:]

@@ -152,7 +152,7 @@ final class SessionLifecycleTests: XCTestCase {
 }
 
 /// Minimal RTSP sender for driving AirPlayConnection over loopback.
-private final class RTSPClient {
+private final class RTSPClient: Sendable {
     let connection: NWConnection
 
     private init(connection: NWConnection) {
