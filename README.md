@@ -12,12 +12,12 @@ AirPlay screen mirroring receiver for macOS. Mirror your iPhone or iPad screen t
 ## Features
 
 - **Screen Mirroring** — Receive AirPlay mirroring from any iPhone or iPad
-- **Audio** — Full audio passthrough with adjustable volume control
+- **Audio** — Full audio passthrough with adjustable volume control; follows you when you switch output devices
 - **Rotation** — Seamlessly handles device rotation and lock/unlock
 - **Low Latency** — Hardware-accelerated H.264 decoding via VideoToolbox
 - **Menu Bar** — Runs quietly in the menu bar with live connection status
 - **Auto-Update** — Built-in update checking via Sparkle
-- **Secure** — Cryptographic identity stored in macOS Keychain; full AirPlay pairing and FairPlay DRM support
+- **Private** — Fresh pairing identity per receiver, generated in memory and never persisted; full AirPlay pairing and FairPlay DRM support
 
 ## Download
 
@@ -68,16 +68,18 @@ If the macOS built-in **AirPlay Receiver** is enabled, your iPhone may connect t
 ### Connection drops or won't connect
 
 - Make sure your iPhone/iPad and Mac are on the **same Wi-Fi network**
-- Restart VirtualMirror from the menu bar (Quit, then relaunch)
-- Check that no firewall is blocking port **47000**
+- If the window shows an error (port already in use, no Local Network access), fix the cause it names and click **Retry**
+- Use **Restart This Receiver** from the Command Palette (⌘K), or quit from the menu bar and relaunch
+- Check that no firewall is blocking VirtualMirror — the first receiver listens on port **47000**, each additional one 1000 higher (48000, 49000, …)
+- A second device mirroring to the same receiver replaces the first; open another receiver (⌘N) to show both
 
 ### Local network permission
 
-The first time you run it, macOS may ask VirtualMirror for permission to find devices on your local network. Allow it — AirPlay discovery needs it. Each receiver generates a fresh pairing identity in memory; nothing is persisted.
+The first time you run it, macOS asks VirtualMirror for permission to find devices on your local network. Allow it — AirPlay discovery needs it. If you declined, enable it in **System Settings > Privacy & Security > Local Network**, then click **Retry** in the receiver window. Each receiver generates a fresh pairing identity in memory; nothing is persisted.
 
 ## Building from Source
 
-Requires macOS 14.0+ and Xcode 15+.
+Requires Xcode 26+ (Swift 6 language mode). The app runs on macOS 14.0+.
 
 ```bash
 git clone https://github.com/souriscloud/VirtualMirror.git

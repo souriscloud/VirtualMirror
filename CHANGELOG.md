@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI now runs on `macos-26` with Xcode 26.6.
 - The project now builds in **Swift 6 language mode**, so the compiler checks for data races at compile time. Types that do all their work on one serial queue are marked `@unchecked Sendable`, with a comment explaining why each is safe. The video decoder's error counter, which the decode callback updated with no lock, is now locked.
 - SwiftLint is clean and now a required CI check (`--strict`).
+- The in-app Help and the README now cover the error screen and Retry, Local Network access, a second device taking over a receiver, audio following output-device changes, and per-receiver ports. The README no longer says the pairing identity is stored in the Keychain, which stopped being true in 0.4.0.
 - The release script:
   - uploads the delta updates alongside the DMG
   - publishes the GitHub release before pushing the appcast, so an update is never advertised before its download exists

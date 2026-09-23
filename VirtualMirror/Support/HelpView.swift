@@ -225,7 +225,7 @@ private struct HelpAudio: View {
             HelpHeader(icon: "speaker.wave.2.fill", title: "Audio & Volume")
             VStack(alignment: .leading, spacing: 14) {
                 HelpPoint(icon: "speaker.wave.2.fill", lead: "Audio passthrough",
-                          body_: "Sound from the mirrored device plays through your Mac's current output.")
+                          body_: "Sound from the mirrored device plays through your Mac's current output — and follows along if you switch it (AirPods, speakers, headphones) mid-session.")
                 HelpPoint(icon: "slider.horizontal.3", lead: "Volume slider",
                           body_: "Hover over the mirroring window to reveal the volume slider.")
                 HelpPoint(icon: "speaker.slash.fill", lead: "Mute",
@@ -264,12 +264,16 @@ private struct HelpTroubleshooting: View {
             VStack(alignment: .leading, spacing: 14) {
                 HelpPoint(icon: "airplayvideo", lead: "VirtualMirror isn't in the list",
                           body_: "macOS has its own built-in AirPlay Receiver. If it's on, your device may connect to it instead. Turn it off in System Settings → General → AirDrop & Handoff → AirPlay Receiver.")
+                HelpPoint(icon: "exclamationmark.triangle", lead: "The window shows an error",
+                          body_: "If a receiver can't start — its port is taken by another copy of VirtualMirror or another AirPlay receiver, or it's missing Local Network access — the window says why. Fix the cause, then click Retry.")
                 HelpPoint(icon: "wifi", lead: "Won't connect or keeps dropping",
-                          body_: "Confirm both devices are on the same Wi-Fi network. Restart VirtualMirror (Quit from the menu bar, then relaunch).")
+                          body_: "Confirm both devices are on the same Wi-Fi network. If it's still stuck, use Restart This Receiver from the command palette (⌘K), or quit from the menu bar and relaunch.")
+                HelpPoint(icon: "iphone.and.arrow.forward", lead: "Another device took over",
+                          body_: "Each receiver shows one device at a time, so a second device mirroring to the same receiver replaces the first. To show both, open another receiver with ⌘N.")
                 HelpPoint(icon: "lock.shield", lead: "Blocked by a firewall",
-                          body_: "VirtualMirror listens on port 47000. If you run a firewall, allow incoming connections to it.")
+                          body_: "The first receiver listens on port 47000, and each additional one 1000 higher (48000, 49000, …). If you run a firewall, allow incoming connections to VirtualMirror.")
                 HelpPoint(icon: "dot.radiowaves.left.and.right", lead: "Local network permission",
-                          body_: "The first time, macOS may ask VirtualMirror for permission to find devices on your local network — allow it so AirPlay discovery works.")
+                          body_: "The first time, macOS asks VirtualMirror for permission to find devices on your local network — allow it so AirPlay discovery works. If you declined, turn it on in System Settings → Privacy & Security → Local Network, then click Retry.")
             }
         }
     }
