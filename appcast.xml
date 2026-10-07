@@ -3,19 +3,27 @@
     <channel>
         <title>VirtualMirror</title>
         <item>
+            <title>0.5.1</title>
+            <pubDate>Wed, 07 Oct 2026 04:24:29 +0200</pubDate>
+            <sparkle:version>501</sparkle:version>
+            <sparkle:shortVersionString>0.5.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.5.1/VirtualMirror-0.5.1.dmg" length="4741018" type="application/octet-stream" sparkle:edSignature="jMNsTGfdMumf1lQTroz1NSKvye4EByQJFU3WATQMuyKvQSDnZdDxy/T9S3K/0DhkMk8JTbW69/6EyTZXTPW4CA=="/>
+            <sparkle:deltas>
+                <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.5.1/VirtualMirror501-500.delta" sparkle:deltaFrom="500" length="1168662" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="976464" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="LG5OQJLe8qoe2Zkbfq608HF5f7Rd/KzzxmMdLT/2oT27OZ/6XLgiaouRrmGrgAmt8af+Ks39p5ms4Jfb22+TAg=="/>
+                <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.5.1/VirtualMirror501-400.delta" sparkle:deltaFrom="400" length="1739586" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977840" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="xJYIh5v7uUCk8fJ8nkKmZMYs/qhTtRptjskoP0TQqNO6M8/ofRE2mYCMars/1axmqerpArhsjYowcYbsdlj4Ag=="/>
+                <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.5.1/VirtualMirror501-302.delta" sparkle:deltaFrom="302" length="1951066" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977840" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="4a/3MoSJazZx/iTxAWeJnu5DQrl3n6fISwrzXjgR8hGMnWTIKEH1DONTN4p5EGq9OLX5FTXfHGbLIvIzFD2BAg=="/>
+                <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.5.1/VirtualMirror501-301.delta" sparkle:deltaFrom="301" length="1953534" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977840" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="Qnhsmr2Sm4ImYY+8LHMDNBPtqPN5K6krl8tUem458UlF89qArA40uUMXXszH/Z+Xi/pdFAIluq0rURJpx5UXAg=="/>
+                <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.5.1/VirtualMirror501-300.delta" sparkle:deltaFrom="300" length="1954806" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977840" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="Em/kII+YeHYH2b4ZXwPzBggCMw6r/Lb9Uzk/qUFaZ3cEM8fjeVl9iIr3pT9ul5y/ltwWRr0SHdr7TA839dPwBg=="/>
+            </sparkle:deltas>
+        </item>
+        <item>
             <title>0.5.0</title>
             <pubDate>Wed, 23 Sep 2026 04:14:32 +0200</pubDate>
             <sparkle:version>500</sparkle:version>
             <sparkle:shortVersionString>0.5.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.5.0/VirtualMirror-0.5.0.dmg" length="2523678" type="application/octet-stream" sparkle:edSignature="SuMIQsCLreRal1QV5jRfofQS7zMRe+KjihDsBNCbDs0W80ustk4b4UR5YH02eoMKlrHoavVYbUuCYWZBoOeFCg=="/>
-            <sparkle:deltas>
-                <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.5.0/VirtualMirror500-400.delta" sparkle:deltaFrom="400" length="655926" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977840" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="EpcNFPmTCwxjhsF/IUiN3Ph3iMN1XJFvgIM+EYPXEyH/hJ3SyZVRRtdM75QKfzF+6fPo6ua4p/JKlcRJhxqZCA=="/>
-                <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.5.0/VirtualMirror500-302.delta" sparkle:deltaFrom="302" length="868318" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977840" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="oF5KX7MkDHnrXFIkJjjDmPD6qjJsQk3Ic2XqZkEk1rGtn/uwwwkw2swZsBZShADU8OREexVxfmqJcJO90C9JDA=="/>
-                <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.5.0/VirtualMirror500-301.delta" sparkle:deltaFrom="301" length="872122" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977840" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="Cfk3REfaFZG7fqoWkPzYn0MLmbX7/3bfu2jP49dTMNch6ImM5ZaVXIl/2i6yDjA2qv346s7KJPNaCXDh9JCwCA=="/>
-                <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.5.0/VirtualMirror500-300.delta" sparkle:deltaFrom="300" length="873354" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977840" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="4FoI8zWyvQIpGN4o8vBB03YrGqqqWP+7iCQBHE9o76v+D5neUEyee4kgMnj/CgP8Ktg8lAgBT0NKlpL4zdATCA=="/>
-                <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.5.0/VirtualMirror500-200.delta" sparkle:deltaFrom="200" length="873958" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977840" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="eHJGkys312f9Y8zH6k0+fmCozxQ7PzXtAduUZvjxdiONF72Ktqm1kHELq3OBYJVBfHwOhK7CQ4nU9PQHH22KCQ=="/>
-            </sparkle:deltas>
         </item>
         <item>
             <title>0.4.0</title>
@@ -24,14 +32,6 @@
             <sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.4.0/VirtualMirror-0.4.0.dmg" length="2486812" type="application/octet-stream" sparkle:edSignature="jRQ+ndd7A9RvhwtTo61U80Dwn/qhajgjtAaZK6U81oxIweqGtCgTTgLKBVUN8aiLbMEUyuQXvNLFABsckYabCQ=="/>
-        </item>
-        <item>
-            <title>0.3.2</title>
-            <pubDate>Tue, 17 Mar 2026 00:37:04 +0100</pubDate>
-            <sparkle:version>302</sparkle:version>
-            <sparkle:shortVersionString>0.3.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/souriscloud/VirtualMirror/releases/download/v0.3.2/VirtualMirror-0.3.2.dmg" length="2256426" type="application/octet-stream" sparkle:edSignature="MBFRDDdp8Nt+YYGkyVTItWIEE2wFrV6TfrwC2G2JEtKUep5OIuOv/re/r+fDgyk8ZHgDy2GF0vQ0YOMOKl9cBA=="/>
         </item>
     </channel>
 </rss>
