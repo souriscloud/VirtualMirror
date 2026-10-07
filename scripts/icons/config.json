@@ -1,0 +1,35 @@
+{
+  "name": "VirtualMirror",
+  "design": "C-data-circuit-gray",
+  "design_version": "1.0.0",
+  "icon": "Resources/AppIcon.icns",
+  "png": "Resources/AppIcon.png",
+  "appiconset": "VirtualMirror/Assets.xcassets/AppIcon.appiconset",
+  "grid": {
+    "radius": 380,
+    "center": [
+      512,
+      540
+    ],
+    "color": [
+      0.72,
+      0.78,
+      0.84
+    ],
+    "line_width": 3.2,
+    "fade_stops": [
+      0,
+      0.41,
+      0.76,
+      1
+    ],
+    "opacity": [
+      1,
+      0.95,
+      0.55,
+      0
+    ]
+  },
+  "badge_minimum_pixels": 64,
+  "pattern_minimum_pixels": 32
+}

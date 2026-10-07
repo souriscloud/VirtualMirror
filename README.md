@@ -116,3 +116,26 @@ See [ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md) for full details.
 VirtualMirror is licensed under the [GNU General Public License v3.0](LICENSE).
 
 Copyright 2026 [Souris.CLOUD](https://bio.souris.cloud) — Made by Souris
+
+## Common installer tooling
+
+The unified Souris.CLOUD installer uses the shared kit in `scripts/installer/`.
+Set up its isolated build tools once:
+
+```bash
+python3 -m venv .local/dmg-tools
+.local/dmg-tools/bin/pip install -r scripts/installer/requirements.txt
+```
+
+DMG assembly does not control Finder. It writes the layout directly and checks
+1×/2× Retina artwork, icon positions, the Applications link and the bundled app
+signature. See [installer kit](scripts/installer/README.md).
+
+
+## Focus-safe local release preparation
+
+`./scripts/release.sh --local` builds and packages the current version into `.local/releases/<version>/`, without Developer ID access, notarization, Git publication or launching a GUI app. It uses the approved icon generator and shared installer kit, checks the real DMG, and writes an installer preview and hash manifest. Artifacts use ad-hoc signatures and are local verification builds, not public distribution builds.
+
+`--local --reuse-build` packages a release product already compiled from the current sources. Developer ID signing, notarization and Sparkle signing still go through the normal release pipeline before publication.
+
+Regenerate approved icons with `python3 scripts/icons/build.py`. The original Souris logo is committed in the icon kit. All macOS sizes, Retina slots, transparency and sRGB colour are verified, and app branding uses the actual bundle icon.

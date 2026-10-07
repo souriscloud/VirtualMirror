@@ -29,6 +29,13 @@
 
 set -euo pipefail
 
+# Focus-safe artifact preparation, requiring no Keychain access or publication.
+if [[ "${1:-}" == "--local" ]]; then
+    shift
+    exec python3 "$(dirname "$0")/prepare-local-release.py" "$@"
+fi
+
+
 # --- Configuration (loaded from scripts/.env) ---
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/.env"
@@ -216,6 +223,8 @@ info "Step 2/8: Archiving with Release configuration"
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
+python3 "$SCRIPT_DIR/icons/build.py"
+
 xcodebuild archive \
     -project "$PROJECT_DIR/$PROJECT" \
     -scheme "$SCHEME" \
@@ -281,96 +290,8 @@ success "App notarized and stapled"
 # ==========================================================================
 info "Step 5/8: Creating branded DMG"
 
-DMG_STAGING="$BUILD_DIR/dmg-staging"
-DMG_TEMP="$BUILD_DIR/$APP_NAME-temp.dmg"
-mkdir -p "$DMG_STAGING"
+"$SCRIPT_DIR/installer/build.sh" "$APP_PATH" "$DMG_BUILD_PATH"
 
-# Copy app and create Applications symlink
-cp -R "$APP_PATH" "$DMG_STAGING/"
-ln -s /Applications "$DMG_STAGING/Applications"
-
-# Copy background images if they exist
-BG_2X="$SCRIPT_DIR/dmg-background@2x.png"
-if [[ -f "$BG_2X" ]]; then
-    mkdir -p "$DMG_STAGING/.background"
-    cp "$BG_2X" "$DMG_STAGING/.background/background@2x.png"
-    [[ -f "$SCRIPT_DIR/dmg-background.png" ]] && cp "$SCRIPT_DIR/dmg-background.png" "$DMG_STAGING/.background/background.png"
-    HAS_BACKGROUND=true
-else
-    HAS_BACKGROUND=false
-fi
-
-# Create read-write temp DMG
-hdiutil create -volname "$DMG_VOLUME_NAME" \
-    -srcfolder "$DMG_STAGING" \
-    -ov -format UDRW \
-    "$DMG_TEMP" \
-    -quiet
-
-# Mount and customize icon layout
-MOUNT_DIR=$(hdiutil attach -readwrite -noverify "$DMG_TEMP" | grep "/Volumes/" | sed 's/.*\(\/Volumes\/.*\)/\1/')
-
-# Give Finder a moment to register the freshly-mounted volume. Without this the
-# osascript layout step intermittently fails with "Can't get disk" (-1728).
-sleep 3
-
-if [[ "$HAS_BACKGROUND" == "true" ]]; then
-    osascript <<APPLESCRIPT
-tell application "Finder"
-    tell disk "$DMG_VOLUME_NAME"
-        open
-        set current view of container window to icon view
-        set toolbar visible of container window to false
-        set statusbar visible of container window to false
-        set bounds of container window to {100, 100, 740, 580}
-        set theViewOptions to the icon view options of container window
-        set arrangement of theViewOptions to not arranged
-        set icon size of theViewOptions to 128
-        set background picture of theViewOptions to file ".background:background@2x.png"
-        set position of item "$APP_NAME.app" of container window to {160, 240}
-        set position of item "Applications" of container window to {480, 240}
-        close
-        open
-        update without registering applications
-        delay 1
-        close
-    end tell
-end tell
-APPLESCRIPT
-else
-    osascript <<APPLESCRIPT
-tell application "Finder"
-    tell disk "$DMG_VOLUME_NAME"
-        open
-        set current view of container window to icon view
-        set toolbar visible of container window to false
-        set statusbar visible of container window to false
-        set bounds of container window to {100, 100, 640, 480}
-        set theViewOptions to the icon view options of container window
-        set arrangement of theViewOptions to not arranged
-        set icon size of theViewOptions to 128
-        set position of item "$APP_NAME.app" of container window to {140, 200}
-        set position of item "Applications" of container window to {400, 200}
-        close
-        open
-        update without registering applications
-        delay 1
-        close
-    end tell
-end tell
-APPLESCRIPT
-fi
-
-hdiutil detach "$MOUNT_DIR" -quiet
-
-# Convert to compressed read-only DMG
-hdiutil convert "$DMG_TEMP" \
-    -format UDZO \
-    -imagekey zlib-level=9 \
-    -o "$DMG_BUILD_PATH" \
-    -quiet
-
-rm -f "$DMG_TEMP"
 success "DMG created: $DMG_FILENAME"
 
 # ==========================================================================

@@ -1,0 +1,33 @@
+{
+  "design": "C-data-circuit-gray",
+  "inputs": {
+    "render.swift": "bb65292c3e3ab86a0527977b1d12868ecc294a56b686e4297dba37492d915d84",
+    "config.json": "5bd825b43ab8bac81f98544ec0ee3bf37fe6536e5c58d798bc6b0ecd4bcaa9c7",
+    "souris-original.png": "3ac383a78042c21b12600e8cf11a5e8e368a1a76200a1126872562be66ce9751",
+    "build.py": "ba45f410195b007d0d21192f77d71b8ce229f33e842580429c00accf72e5c961",
+    "verify.swift": "3b0c016dd8fc70073f19e3ee8560c6b4ea7b277eff3cfe1dd878bb424132648f"
+  },
+  "outputs": {
+    "Resources/AppIcon.icns": "08979682fb2bf88ec140864ccbdb45cc648bffe22e78f87b8fa6161f9f676dc0",
+    "Resources/AppIcon.png": "0a148c11f60f37073ab802437ecf1ca63271f70a859c549185731c385947a19f",
+    "VirtualMirror/Assets.xcassets/AppIcon.appiconset/icon_16x16.png": "c392f85c9726ce80a5de620a577475f48ac473189c31ebb669ced57663d70c62",
+    "VirtualMirror/Assets.xcassets/AppIcon.appiconset/icon_32x32.png": "d1d3354e8424b711b6bf9d33a9592d5ca354ac8999f7f68da51e0df86d115295",
+    "VirtualMirror/Assets.xcassets/AppIcon.appiconset/icon_64x64.png": "53edda46b1716ff684e768d639baaac34fb3bf2789e4675da321a9a7658a4638",
+    "VirtualMirror/Assets.xcassets/AppIcon.appiconset/icon_128x128.png": "1673587e224595e790f5b236e87bd7da9e8c2a0dc8a97efae4a245115e086717",
+    "VirtualMirror/Assets.xcassets/AppIcon.appiconset/icon_256x256.png": "4367cb168f81f59d092befbf9c0357b007f6f1592acfda2064da798db30f36ff",
+    "VirtualMirror/Assets.xcassets/AppIcon.appiconset/icon_512x512.png": "1f950f7227927674ed9d7f6ca576f363c042c2fdefe121949b211330ed34dd8a",
+    "VirtualMirror/Assets.xcassets/AppIcon.appiconset/icon_1024x1024.png": "0a148c11f60f37073ab802437ecf1ca63271f70a859c549185731c385947a19f",
+    "VirtualMirror/Assets.xcassets/AppIcon.appiconset/Contents.json": "76e1ceaefe227fef91337b64f5d9720bb66084aa8f034fd4c2970c43c59d8bf0"
+  },
+  "native_png_sizes": [
+    16,
+    32,
+    64,
+    128,
+    256,
+    512,
+    1024
+  ],
+  "icns_representations": 10,
+  "original_logo_sha256": "3ac383a78042c21b12600e8cf11a5e8e368a1a76200a1126872562be66ce9751"
+}

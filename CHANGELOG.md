@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Unified app icon family with a cool gray data-circuit texture, a soft radial fade,
+  and the complete original Souris.CLOUD logo in the corner badge. About and Welcome
+  branding uses the actual app icon; installers display the same new icon.
+- Icons are reproducibly generated and checked at every native macOS size, with
+  complete 1x/2x representations, sRGB colour and transparent outer edges.
+
+- Unified Souris.CLOUD installer design: dark gradient, consistent typography and layout,
+  a curved brush arrow, and correctly scaled Retina artwork. DMGs are assembled and
+  checked without Finder automation, including signature verification after packaging.
+
 ## [0.5.0] - 2026-09-23
 
 ### Added

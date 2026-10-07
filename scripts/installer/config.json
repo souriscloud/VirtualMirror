@@ -1,0 +1,7 @@
+{
+  "name": "VirtualMirror",
+  "subtitle": "Your small screen. A bigger canvas.",
+  "design_version": "1.0.0",
+  "preview_icon": "VirtualMirror/Assets.xcassets/AppIcon.appiconset/icon_1024x1024.png",
+  "legacy_background": "scripts/dmg-background.png"
+}

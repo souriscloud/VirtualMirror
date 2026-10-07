@@ -17,6 +17,8 @@ struct AboutView: View {
 
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
+                .interpolation(.high)
+                .scaledToFit()
                 .frame(width: 128, height: 128)
 
             Text("VirtualMirror")
